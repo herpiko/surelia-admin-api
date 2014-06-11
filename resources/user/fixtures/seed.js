@@ -1,6 +1,6 @@
 // insert admin only
 var mongoose = require ("mongoose");
-mongoose.connect ("mongodb://localhost/sureliatest");
+mongoose.connect ("mongodb://localhost/sureliaAdmin");
 
 process.env.CRYPTO_KEYS = ["admin", "keys"];
 var schemas = require ("../schemas");

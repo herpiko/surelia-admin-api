@@ -51,6 +51,7 @@ function auth (schema, options) {
     query[loginPath] = username;
     this.findOne(query, function (err, model) {
 
+      console.log(query);
       if (err) return next(err)
       if (!model) return next("does not exist");
 
