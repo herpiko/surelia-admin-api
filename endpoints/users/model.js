@@ -297,6 +297,11 @@ User.prototype.authenticate = function (ctx, options, cb) {
   });
 }
 
+User.prototype.account = function(ctx, options, cb){
+  cb (null, ctx.session);
+}
+
+
 module.exports = function(options) {
   return thunkified (User(options));
 }

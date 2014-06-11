@@ -15,6 +15,7 @@ function Routes (name, mid, handle) {
   router.DEL ("/users/:id", handle.remove);
   router.DEL ("/users", handle.remove);
 
+  router.GET ("/account", handle.account);
   router.POST ("/account/login", handle.authenticate);
   router.GET ("/account/activate/:secret", handle.activate);
 

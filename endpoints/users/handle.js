@@ -41,3 +41,7 @@ User.prototype.activate = function * (){
     yield handle.get (this, "activate", {});
 }
 
+User.prototype.account = function * (){
+    yield handle.get (this, "account", {});
+}
+
