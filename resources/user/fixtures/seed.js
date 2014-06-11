@@ -2,6 +2,7 @@
 var mongoose = require ("mongoose");
 mongoose.connect ("mongodb://localhost/sureliatest");
 
+process.env.CRYPTO_KEYS = ["admin", "keys"];
 var schemas = require ("../schemas");
 var User = schemas.User;
 
@@ -17,7 +18,7 @@ User.remove(function(){
     if (err) throw err;
     User.activate(registered.secret, function(err, activated){
       if (err) throw err;
-      console.log ("admin@jamkrindo.com is created", user.password);
+      console.log ("admin@example.com is created", user.password);
       mongoose.disconnect();
     });
   });
