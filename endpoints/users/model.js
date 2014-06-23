@@ -281,7 +281,8 @@ User.prototype.authenticate = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
   var username = body.email;
-  var password = body.password
+  var password = body.password;
+  var omit = options.omit || ["hash", "secret", "log"];
 
   Model.User.authenticate (username, password, function (err, authenticated) {
 
@@ -293,7 +294,16 @@ User.prototype.authenticate = function (ctx, options, cb) {
       return cb (boom.unauthorized ("not authenticated"));
     }
 
-    return cb (null, { authenticated: authenticated });
+    var object = {
+      object: "user"
+    }
+
+    object = _.merge(object, authenticated.toJSON());
+    object = _.omit(object, omit);
+
+    object.roles = authenticated.roles;
+
+    return cb (null, object);
   });
 }
 

@@ -10,6 +10,13 @@ var _ = require ("lodash");
 
 var timestamps = require ("mongoose-times");
 
+var policy = require ("../../../policy"); // todo: using env var, or process.cwd(), make it in lib
+var enums = require ("../enums")(policy);
+var Acl = enums.Acl;
+var Roles = enums.Roles;
+var States = enums.States;
+
+
 /**
  * Shorthands
  */
@@ -50,8 +57,9 @@ var UserSchema = new Schema({
   modified : { type : Date },
   mailboxServer : { type: Number },
   quota : { type : Number },
-  state : { type : String },
   secret : { type : String },
+  roles : [ { type : String, enum : Roles.enum } ],
+  state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
 
   log : [{
     type : Schema.Types.ObjectId,
@@ -64,6 +72,18 @@ UserSchema.plugin(auth, { keys: process.env.CRYPTO_KEYS });
 UserSchema.plugin(timestamps);
 
 UserSchema.set("toJSON", { getters: false });
+
+UserSchema.path("roles").get(function (titles) {
+  var arr = [];
+  _.map (titles, function (title){
+    arr.push(Acl.userRoles[title]);
+  });
+  if (arr.length > 0) {
+    // Only add 'user' if user is authenticated (e.g has roles defined)
+    arr.push(Acl.userRoles["user"]);
+  }
+  return arr;
+});
 
 UserSchema.virtual("session").set(function(session) {
   this._session = session;
