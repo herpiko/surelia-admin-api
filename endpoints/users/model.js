@@ -7,6 +7,10 @@ var boom = helper.error;
 
 var ResourceUser = require ("../../resources/user");
 var Model = ResourceUser.schemas;
+var ResourceQueue = require ("../../resources/commandQueue");
+var QueueModel = ResourceQueue.schemas;
+var QueueCommands = ResourceQueue.enums.Commands;
+var QueueStates = ResourceQueue.enums.States;
 
 var Session
 try{
@@ -38,7 +42,41 @@ function User (options) {
   this.name = "user";
 }
 
-User.prototype.find = function (ctx, options, cb) {
+User.prototype.findActive = function(ctx, options, cb) {
+  var query = {
+    state: QueueStates.types.ACTIVE,
+  }
+
+  search (query, ctx, options, cb);
+}
+
+User.prototype.findInactive = function(ctx, options, cb) {
+  var query = {
+    state: QueueStates.types.INACTIVE,
+  }
+
+  search (query, ctx, options, cb);
+}
+
+User.prototype.findPending = function(ctx, options, cb) {
+  var query = {
+    state: QueueStates.types.PENDING,
+  }
+
+  search (query, ctx, options, cb);
+}
+
+User.prototype.findPendingTransaction = function(ctx, options, cb) {
+  var query = {
+    pendingTransaction: {
+      $ne: ObjectId("000000000000000000000000")
+    }
+  }
+
+  search (query, ctx, options, cb);
+}
+
+User.prototype.search = function (query, ctx, options, cb) {
 
   var qs = ctx.query;
 
@@ -58,8 +96,6 @@ User.prototype.find = function (ctx, options, cb) {
   // for custom operation
   var operator = qs.operator || false;
   var operation = operator && qs.operation ? qs.operation : [];
-
-  var query = {};
 
   if (!operator) {
 
@@ -165,26 +201,43 @@ User.prototype.findOne = function (ctx, options, cb) {
 User.prototype.create = function (ctx, options, cb) {
 
   var body = options.body;
-  Model.User.register (body, function (err, data){
+  var createTransaction = function(next) {
+     QueueModel.create({
+       command: QueueCommands.types.CREATE,
+       args: body,
+       state: QueueStates.types.PENDING,
+       createdDate: new Date
+     }, next); 
+  }
 
+  var register = function(err, result) {
     if (err) {
-      return cb (err);
+      console.log(err);
+      return cb(err);
     }
+    body.pendingTransaction = result._id;
+    Model.User.register (body, function (err, data){
 
-    if (!data) {
-      // boom
-    }
+      if (err) {
+        return cb (err);
+      }
 
-    var object = {
-      object : "user",
-    }
+      if (!data) {
+        // boom
+      }
 
-    var omit = ["hash", "log"];
-    object = _.merge(object, data.toJSON());
-    object = _.omit (object, omit);
-    return cb (null, object);
+      var object = {
+        object : "user",
+      }
 
-  });
+      var omit = ["hash", "log"];
+      object = _.merge(object, data.toJSON());
+      object = _.omit (object, omit);
+      return cb (null, object);
+    });
+  }
+
+  createTransaction(register);
 }
 
 User.prototype.update = function (ctx, options, cb) {

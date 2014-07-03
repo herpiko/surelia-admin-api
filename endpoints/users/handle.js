@@ -17,6 +17,22 @@ User.prototype.find = function * (){
   yield handle.get (this, "find", {});
 }
 
+User.prototype.findActive = function * (){
+  yield handle.get (this, "findActive", {});
+}
+
+User.prototype.findInactive = function * (){
+  yield handle.get (this, "findInactive", {});
+}
+
+User.prototype.findPending = function * (){
+  yield handle.get (this, "findPending", {});
+}
+
+User.prototype.findPendingTransaction = function * (){
+  yield handle.get (this, "findPendingTransaction", {});
+}
+
 User.prototype.findOne = function * (){
   yield handle.get (this, "findOne", {});
 }

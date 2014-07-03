@@ -60,6 +60,7 @@ var UserSchema = new Schema({
   secret : { type : String },
   roles : [ { type : String, enum : Roles.enum } ],
   state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
+  pendingTransaction : { type : Schema.Types.ObjectId, ref : "User", default: Schema.Types.ObjectId }, 
 
   log : [{
     type : Schema.Types.ObjectId,

@@ -20,7 +20,7 @@ var index = __dirname + "/../..";
 // related options for api
 var options = {
   root : index + "/endpoints", // the app index
-  db : "mongodb://localhost/sureliatest", // the db uri
+  db : "mongodb://localhost/sureliaAdminTest", // the db uri
   driver : require ("mongoose") // the driver
 }
 options =_.merge(policy, options);
