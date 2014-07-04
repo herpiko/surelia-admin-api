@@ -42,12 +42,21 @@ function User (options) {
   this.name = "user";
 }
 
+User.prototype.find = function(ctx, options, cb) {
+  var query = {
+    state: QueueStates.types.ACTIVE,
+  }
+
+  this.search (query, ctx, options, cb);
+}
+
+
 User.prototype.findActive = function(ctx, options, cb) {
   var query = {
     state: QueueStates.types.ACTIVE,
   }
 
-  search (query, ctx, options, cb);
+  this.search (query, ctx, options, cb);
 }
 
 User.prototype.findInactive = function(ctx, options, cb) {
@@ -55,7 +64,7 @@ User.prototype.findInactive = function(ctx, options, cb) {
     state: QueueStates.types.INACTIVE,
   }
 
-  search (query, ctx, options, cb);
+  this.search (query, ctx, options, cb);
 }
 
 User.prototype.findPending = function(ctx, options, cb) {
@@ -63,7 +72,7 @@ User.prototype.findPending = function(ctx, options, cb) {
     state: QueueStates.types.PENDING,
   }
 
-  search (query, ctx, options, cb);
+  this.search (query, ctx, options, cb);
 }
 
 User.prototype.findPendingTransaction = function(ctx, options, cb) {
@@ -73,7 +82,7 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
     }
   }
 
-  search (query, ctx, options, cb);
+  this.search (query, ctx, options, cb);
 }
 
 User.prototype.search = function (query, ctx, options, cb) {
