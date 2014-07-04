@@ -12,6 +12,10 @@ var QueueModel = ResourceQueue.schemas;
 var QueueCommands = ResourceQueue.enums.Commands;
 var QueueStates = ResourceQueue.enums.States;
 
+var policy = require("../../policy");
+var UserEnums = ResourceUser.enums(policy);
+var UserStates = UserEnums.States;
+
 var Session
 try{
   Session = mongoose.model ("Session", {}); 
@@ -52,8 +56,9 @@ User.prototype.find = function(ctx, options, cb) {
 
 
 User.prototype.findActive = function(ctx, options, cb) {
+  console.log(UserStates);
   var query = {
-    state: QueueStates.types.ACTIVE,
+    state: UserStates.types.ACTIVE,
   }
 
   this.search (query, ctx, options, cb);
@@ -61,7 +66,7 @@ User.prototype.findActive = function(ctx, options, cb) {
 
 User.prototype.findInactive = function(ctx, options, cb) {
   var query = {
-    state: QueueStates.types.INACTIVE,
+    state: UserStates.types.INACTIVE,
   }
 
   this.search (query, ctx, options, cb);
@@ -69,7 +74,7 @@ User.prototype.findInactive = function(ctx, options, cb) {
 
 User.prototype.findPending = function(ctx, options, cb) {
   var query = {
-    state: QueueStates.types.PENDING,
+    state: UserStates.types.PENDING,
   }
 
   this.search (query, ctx, options, cb);
@@ -133,6 +138,7 @@ User.prototype.search = function (query, ctx, options, cb) {
     query = { $and : [ query, options.and ]};
   }
 
+  console.log(query);
   var task = Model.User.find(query, omit);
   var paths = Model.User.schema.paths;
   var keys = Object.keys(paths);
@@ -143,7 +149,7 @@ User.prototype.search = function (query, ctx, options, cb) {
 
   task.sort({ lastUpdated : -1});
 
- var promise = task.exec();
+  var promise = task.exec();
   promise.addErrback(cb);
   promise.then(function(retrieved){
     Model.User.count(query, function(err, total){
