@@ -5,8 +5,6 @@ var debug = require ("debug") ("api-resources-commandqueue-schemas-commandqueue"
 var mongoose = require ("mongoose");
 var _ = require ("lodash");
 
-var timestamps = require ("mongoose-times");
-
 var policy = require ("../../../policy"); // todo: using env var, or process.cwd(), make it in lib
 var enums = require ("../enums");
 var Commands = enums.Commands;
