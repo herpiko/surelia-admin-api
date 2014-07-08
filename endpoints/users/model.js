@@ -14,6 +14,8 @@ var QueueCommands = ResourceQueue.enums.Commands;
 var QueueStates = ResourceQueue.enums.States;
 var ResourceDomain = require ("../../resources/domain");
 var DomainModel = ResourceDomain.schemas;
+var ResourceServer = require ("../../resources/server");
+var ServerModel = ResourceServer.schemas;
 
 var policy = require("../../policy");
 var UserEnums = ResourceUser.enums(policy);
@@ -246,8 +248,22 @@ User.prototype.create = function (ctx, options, cb) {
     co(function*() {
       if (!(ObjectId.isValid(body.domain) && typeof(body.domain) === "object")) {
         var domain = yield self.findDomainId(body.domain);
-        body.domain = domain._id;
+        if (domain && domain._id) {
+          body.domain = domain._id;
+        } else {
+          return cb(boom.badRequest ("Bad domain"));
+        }
       }
+
+      if (!(ObjectId.isValid(body.mailboxServer) && typeof(body.mailboxServer) === "object")) {
+        var mailboxServer = yield self.findServerId(body.mailboxServer);
+        if (mailboxServer && mailboxServer._id) {
+          body.mailboxServer = mailboxServer._id;
+        } else {
+          return cb(boom.badRequest ("Bad server"));
+        }
+      }
+
       if (body.group == null) {
         delete(body.group);
       }
@@ -279,14 +295,16 @@ User.prototype.create = function (ctx, options, cb) {
 
 User.prototype.update = function (ctx, options, cb) {
 
+  var self = this;
   var body = options.body;
   var id = ctx.params.id;
 
   var save = function(data) {
-    delete data.log;
     data.save(function (err, user){
 
-      if (err) return cb(boom.badRequest (err.message));
+      if (err) {
+        return cb(boom.badRequest (err.message));
+      }
 
       var object = {
         object : "user",
@@ -309,20 +327,31 @@ User.prototype.update = function (ctx, options, cb) {
       // boom
     }
 
-    for (var k in body) {
-      if (body[k]) {
-        data[k] = body[k];  
+    co(function*() {
+      for (var k in body) {
+        if (k != "mailboxServer" && body[k]) {
+          data[k] = body[k];  
+        }
       }
-    }
 
-    if (body.password) {
-      data.setPassword(body.password, function() {
+      if (body.mailboxServer && !(ObjectId.isValid(body.mailboxServer) && typeof(body.mailboxServer) === "object")) {
+        var mailboxServer = yield self.findServerId(body.mailboxServer);
+        if (mailboxServer && mailboxServer._id) {
+          data["mailboxServer"] = mailboxServer._id;
+        } else {
+          return cb(boom.badRequest ("Bad server"));
+        }
+      }
+
+
+      if (body.password) {
+        data.setPassword(body.password, function() {
+          save(data);
+        });
+      } else {
         save(data);
-      });
-    } else {
-      save(data);
-    }
-
+      }
+    })();
   });
 }
 
@@ -439,7 +468,14 @@ User.prototype.findDomainId = function(domain) {
   }
 }
 
-
+User.prototype.findServerId = function(name) {
+  return function(cb) {
+    ServerModel.Server.findOne({
+      name: name,
+      type: { $in: ["mailbox"] }
+    }, cb);
+  }
+}
 
 module.exports = function(options) {
   return thunkified (User(options));

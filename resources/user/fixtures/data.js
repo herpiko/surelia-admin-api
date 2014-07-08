@@ -6,9 +6,10 @@ var email1 = {
   password : "12345",
   created : new Date,
   modified : new Date,
-  mailboxServer: 0,
+  mailboxServer: "mail2",
   quota : 1000,
   group : null,
+  server : "mail2",
   state: "active"
 }
 
@@ -18,8 +19,9 @@ var email2 = {
   password : "12345",
   created : new Date,
   modified : new Date,
-  mailboxServer: 0,
+  mailboxServer: "mail2",
   group : null,
+  server : "mail2",
   quota : 1000
 }
 
@@ -29,8 +31,8 @@ var email3 = {
   password : "12345",
   created : new Date,
   modified : new Date,
-  mailboxServer: 0,
   group : null,
+  mailboxServer: "mail2",
   quota : 1000
 }
 

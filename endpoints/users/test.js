@@ -182,6 +182,64 @@ describe ("Users", function (){
     });
   });
 
+  it ("update a user with bad server", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    var data = {
+      mailboxServer: "olala"
+    };
+
+    request (toServer())
+    .put (uri)
+    .send (data)
+    .expect (400)
+    .end(function (err, res){
+      res.body.should.have.property("object");
+      res.body.object.should.equal("Bad server");
+      done(err);
+    });
+  });
+
+  it ("update a user with non mailbox server", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    var data = {
+      mailboxServer: "mail3"
+    };
+
+    request (toServer())
+    .put (uri)
+    .send (data)
+    .expect (400)
+    .end(function (err, res){
+      res.body.should.have.property("object");
+      res.body.object.should.equal("Bad server");
+      done(err);
+    });
+  });
+
+  it ("update a user with a mailbox server", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    var data = {
+      mailboxServer: "administrator"
+    };
+
+    request (toServer())
+    .put (uri)
+    .send (data)
+    .expect (200)
+    .end(function (err, res){
+      done(err);
+    });
+  });
+
   it ("update password", function (done){
 
     // GET

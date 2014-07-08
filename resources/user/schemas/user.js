@@ -55,13 +55,13 @@ var UserSchema = new Schema({
   domain: { type : Schema.Types.ObjectId, ref : "Domain", required: true}, 
   created : { type : Date },
   modified : { type : Date },
-  mailboxServer : { type: Number },
   quota : { type : Number },
   secret : { type : String },
   profile : { type : Object },
   roles : [ { type : String, enum : Roles.enum } ],
   state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
   group : { type : Schema.Types.ObjectId, ref : "Group", default: Schema.Types.ObjectId }, 
+  mailboxServer : { type : Schema.Types.ObjectId, ref : "Server", default: Schema.Types.ObjectId, required: true }, 
   pendingTransaction : { type : Schema.Types.ObjectId, ref : "User", default: Schema.Types.ObjectId }, 
 
   log : [{
