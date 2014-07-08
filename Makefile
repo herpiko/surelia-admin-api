@@ -22,6 +22,13 @@ test-group:
 		--timeout 10000 \
 		endpoints/groups/test.js
 
+test-server:
+	@NODE_ENV=test ./node_modules/.bin/mocha \
+		--require should \
+		--reporter spec \
+		--harmony \
+		--timeout 10000 \
+		endpoints/servers/test.js
 
 admin:
 	node --harmony resources/user/fixtures/seed.js
