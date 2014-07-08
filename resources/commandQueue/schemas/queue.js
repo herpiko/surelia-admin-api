@@ -24,6 +24,7 @@ var CommandQueueSchema = new Schema({
   state : { type : Object, enum : States.enum, required: true },
   result : { type : Object, enum : States.enum },
   createdDate : { type : Date, required: true },
+  pid : { type : Number },
   doneDate : { type : Date },
 });
 

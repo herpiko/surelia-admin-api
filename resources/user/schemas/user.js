@@ -62,7 +62,7 @@ var UserSchema = new Schema({
   state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
   group : { type : Schema.Types.ObjectId, ref : "Group", default: Schema.Types.ObjectId }, 
   mailboxServer : { type : Schema.Types.ObjectId, ref : "Server", default: Schema.Types.ObjectId, required: true }, 
-  pendingTransaction : { type : Schema.Types.ObjectId, ref : "User", default: Schema.Types.ObjectId }, 
+  pendingTransaction : { type : Schema.Types.ObjectId, ref : "CommandQueue", default: Schema.Types.ObjectId }, 
 
   log : [{
     type : Schema.Types.ObjectId,

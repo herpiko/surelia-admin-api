@@ -45,6 +45,7 @@ var DomainSchema = new Schema({
   state : { type : String, enum : States.enum, default: States.types.INACTIVE},
   creator : { type : Schema.Types.ObjectId, ref : "Domain", required: true }, 
   createdDate : { type : Date, required: true },
+  pendingTransaction : { type : Schema.Types.ObjectId, ref : "CommandQueue", default: Schema.Types.ObjectId }, 
   log : [{
     type : Schema.Types.ObjectId,
     ref : "DomainLog"
