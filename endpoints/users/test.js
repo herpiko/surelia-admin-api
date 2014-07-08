@@ -2,6 +2,7 @@ var request = require ("supertest").agent;
 var resources = "../../resources";
 var async = require ("async");
 var qsify = require ("koa-qs");
+var should = require ("should");
 
 process.env.CRYPTO_KEYS = ["olala", "omama"];
 
@@ -48,13 +49,14 @@ describe ("Users", function (){
       .send (user)
       .expect (200)
       .end (function (err, res){
+        res.body.should.have.property("_id");
         cb(err, res);
       });
     }
     async.mapSeries (users, create, done);
   });
 
-  it ("Get email1", function (done){
+  it ("Get invalid email1", function (done){
 
     // GET
     var uri = "/api/1/users/email1@example.com";
@@ -63,9 +65,184 @@ describe ("Users", function (){
     .get (uri)
     .expect (200)
     .end(function (err, res){
+      res.body.should.be.empty;
       done(err);
     });
 
+  });
+
+  var id;
+  it ("Get email1", function (done){
+
+    // GET
+    var uri = "/api/1/users/email1@example2.com";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      id = res.body._id;
+      res.body.should.have.property("_id");
+      done(err);
+    });
+  });
+
+  it ("Get a user", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.property("_id");
+      done(err);
+    });
+  });
+
+
+  it ("Get active users", function (done){
+
+    // GET
+    var uri = "/api/1/users/example2.com/active";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("total", "object", "data", "count");
+      res.body.data.should.have.length(1);
+      done(err);
+    });
+  });
+
+  it ("Get inactive users", function (done){
+
+    // GET
+    var uri = "/api/1/users/example2.com/inactive";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("total", "object", "data", "count");
+      res.body.data.should.have.length(0);
+      done(err);
+    });
+  });
+
+  it ("Get pending users", function (done){
+
+    // GET
+    var uri = "/api/1/users/example2.com/pending";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("total", "object", "data", "count");
+      res.body.data.should.have.length(0);
+      done(err);
+    });
+  });
+
+  it ("Get waiting users", function (done){
+    // GET
+    var uri = "/api/1/users/example2.com/waiting";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("total", "object", "data", "count");
+      res.body.data.should.have.length(2);
+      done(err);
+    });
+  });
+
+  it ("update a user", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    var data = {
+      profile: {
+        id: "abc"
+      }
+    };
+
+    request (toServer())
+    .put (uri)
+    .send (data)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.property("_id");
+      done(err);
+    });
+  });
+
+  it ("update password", function (done){
+
+    // GET
+    var uri = "/api/1/users/" + id;
+
+    var data = {
+      password: "OK",
+      profile: {
+        id: "def"
+      }
+    };
+
+    request (toServer())
+    .put (uri)
+    .send (data)
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.property("_id");
+      done(err);
+    });
+  });
+
+  it ("Authenticate a bogus user", function (done){
+    var uri = "/api/1/account/login";
+
+    request (toServer())
+    .post (uri)
+    .set ("Content-Type", "application/json")
+    .send ({ email : "email1@example.com", password : "12345" })
+    .expect (401)
+    .end(function (err, res){
+      done(err);
+    });
+  });
+
+  it ("Authenticate another bogus user", function (done){
+    var uri = "/api/1/account/login";
+
+    request (toServer())
+    .post (uri)
+    .set ("Content-Type", "application/json")
+    .send ({ email : "email@example2.com", password : "12345" })
+    .expect (401)
+    .end(function (err, res){
+      done(err);
+    });
+  });
+
+  it ("Authenticate a user with wrong password", function (done){
+    var uri = "/api/1/account/login";
+
+    request (toServer())
+    .post (uri)
+    .set ("Content-Type", "application/json")
+    .send ({ email : "email1@example2.com", password : "1234" })
+    .expect (401)
+    .end(function (err, res){
+      res.body.should.have.property("object");
+      res.body.object.err.should.equal("invalid password");
+      done(err);
+    });
   });
 
   it ("Authenticate a user", function (done){
@@ -74,26 +251,10 @@ describe ("Users", function (){
     request (toServer())
     .post (uri)
     .set ("Content-Type", "application/json")
-    .send ({ email : "email1@example.com", password : "12345" })
+    .send ({ email : "email1@example2.com", password : "OK" })
     .expect (200)
     .end(function (err, res){
       done(err);
     });
   });
-
-
-  it ("Get all users", function (done){
-
-    // GET
-    var uri = "/api/1/users";
-
-    request (toServer())
-    .get (uri)
-    .expect (200)
-    .end(function (err, res){
-      done(err);
-    });
-
-  });
-
 });

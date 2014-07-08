@@ -51,15 +51,17 @@ function audit (trail, done) {
  * The main user schema
  */
 var UserSchema = new Schema({
-
-  email : { type : String, unique: true, lowercase: true, trim: true},
+  username: { type : String, lowercase: true, trim: true, required: true},
+  domain: { type : Schema.Types.ObjectId, ref : "Domain", required: true}, 
   created : { type : Date },
   modified : { type : Date },
   mailboxServer : { type: Number },
   quota : { type : Number },
   secret : { type : String },
+  profile : { type : Object },
   roles : [ { type : String, enum : Roles.enum } ],
   state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
+  group : { type : Schema.Types.ObjectId, ref : "Group", default: Schema.Types.ObjectId }, 
   pendingTransaction : { type : Schema.Types.ObjectId, ref : "User", default: Schema.Types.ObjectId }, 
 
   log : [{
@@ -68,6 +70,8 @@ var UserSchema = new Schema({
   }]
 
 });
+
+UserSchema.index({username: 1, domain: 1}, {unique: true});
 
 UserSchema.plugin(auth, { keys: process.env.CRYPTO_KEYS });
 UserSchema.plugin(timestamps);
@@ -120,10 +124,6 @@ UserSchema.pre("save", true, function(next, done) {
   // save the log
   audit(trail, done);
 
-});
-
-UserSchema.post("init", function(doc) {
-  doc.previous = doc.toJSON();
 });
 
 var User;

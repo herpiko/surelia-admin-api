@@ -94,8 +94,4 @@ GroupSchema.pre("save", true, function(next, done) {
   audit(trail, done);
 });
 
-GroupSchema.post("init", function(doc) {
-  doc.previous = doc.toJSON();
-});
-
 module.exports = Group;

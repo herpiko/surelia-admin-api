@@ -8,7 +8,7 @@ function auth (schema, options) {
   options || (options = {})
 
   // Options
-  var loginPath = options.loginPath || "email";
+  var loginPath = options.loginPath || "username";
   var hashPath = options.hashPath || "hash";
   var workFactor = options.workFactor || 10;
   var query = {};
@@ -46,9 +46,10 @@ function auth (schema, options) {
 
   // Authenticate with the configured login path and password on 
   // the model layer, passing the authenticated instance into the callback
-  schema.static("authenticate", function (username, password, next) {
+  schema.static("authenticate", function (username, domain, password, next) {
 
     query[loginPath] = username;
+    query.domain = domain;
     this.findOne(query, function (err, model) {
 
       if (err) return next(err)
@@ -103,7 +104,7 @@ function auth (schema, options) {
     this.create(attr, function (err, model) {
       if (err) {
         if (/duplicate key/.test(err)) {
-          return next(Error(loginPath + " taken"));
+          return next(Error(loginPath + " " + attr.username + " taken"));
         }
         return next(err);
       }
@@ -111,20 +112,17 @@ function auth (schema, options) {
       model.secret = serializer.stringify({ _id : model._id }, options.keys[0], options.keys[1]);
       model.state = model.state || "pending";
 
+      if (model.state == "activated") {
+        model.secret = "";
+      }
+
       model.save(function(err, saved){
         
         if (err) {
           return next (err);
         }
 
-        if (model.state == "active") {
-          self.activate(model.secret, function(err, activated){
-            return next(err, activated);
-          });
-        } else {
-          return next(null, model);  
-        }
-
+        return next(null, model);  
       });
     })
     return this;

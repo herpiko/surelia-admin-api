@@ -1,4 +1,5 @@
 var helper = require ("panas").helper;
+var co = require("co");
 var mongoose = require ("mongoose");
 var thunkified = helper.thunkified;
 var async = require ("async");
@@ -11,6 +12,8 @@ var ResourceQueue = require ("../../resources/commandQueue");
 var QueueModel = ResourceQueue.schemas;
 var QueueCommands = ResourceQueue.enums.Commands;
 var QueueStates = ResourceQueue.enums.States;
+var ResourceDomain = require ("../../resources/domain");
+var DomainModel = ResourceDomain.schemas;
 
 var policy = require("../../policy");
 var UserEnums = ResourceUser.enums(policy);
@@ -26,16 +29,6 @@ try{
 var ObjectId = mongoose.Types.ObjectId;
 
 var LIMIT = 10;
-
-function isValidObjectId(str) {
-  // coerce to string so the function can be generically used to test both strings and native objectIds created by the driver
-  str = str + "";
-  var len = str.length, valid = false;
-  if (len == 12 || len == 24) {
-    valid = /^[0-9a-fA-F]+$/.test(str);
-  }
-  return valid;
-}
 
 /**
  * User class
@@ -56,7 +49,6 @@ User.prototype.find = function(ctx, options, cb) {
 
 
 User.prototype.findActive = function(ctx, options, cb) {
-  console.log(UserStates);
   var query = {
     state: UserStates.types.ACTIVE,
   }
@@ -93,6 +85,8 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
 User.prototype.search = function (query, ctx, options, cb) {
 
   var qs = ctx.query;
+  var self = this;
+  var domain = ctx.params.domain;
 
   // skip, limit, sort
   var skip = qs.skip || 0;
@@ -138,118 +132,146 @@ User.prototype.search = function (query, ctx, options, cb) {
     query = { $and : [ query, options.and ]};
   }
 
-  console.log(query);
-  var task = Model.User.find(query, omit);
-  var paths = Model.User.schema.paths;
-  var keys = Object.keys(paths);
+  co(function*() {
+    if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
+      domain = yield self.findDomainId(domain);
+      if (domain && domain._id) {
+        query.domain = domain._id;
+      } else {
+        var obj = {
+          object : "list",
+          total : 0,
+          count : 0,
+          data : []
+        }
 
-  task.skip (skip);
-  task.limit (limit);
-  task.sort (sort);
+        cb (null, obj);
+       }
+    }
 
-  task.sort({ lastUpdated : -1});
+    var task = Model.User.find(query, omit);
+    var paths = Model.User.schema.paths;
+    var keys = Object.keys(paths);
 
-  var promise = task.exec();
-  promise.addErrback(cb);
-  promise.then(function(retrieved){
-    Model.User.count(query, function(err, total){
+    task.skip (skip);
+    task.limit (limit);
+    task.sort (sort);
 
-      if (err) return cb (err);
+    task.sort({ lastUpdated : -1});
 
-      var obj = {
-        object : "list",
-        total : total,
-        count : retrieved.length,
-        data : retrieved
-      }
+    var promise = task.exec();
+    promise.addErrback(cb);
+    promise.then(function(retrieved){
+      Model.User.count(query, function(err, total){
 
-      cb (null, obj);
+        if (err) return cb (err);
 
+        var obj = {
+          object : "list",
+          total : total,
+          count : retrieved.length,
+          data : retrieved
+        }
+
+        cb (null, obj);
+      });
     });
-  });
+  })();
 }
 
 User.prototype.findOne = function (ctx, options, cb) {
   var self = this;
   var id = ctx.params.id;
+  var domain = ctx.params.domain;
   var qs = ctx.query;
 
   var _id;
-  var email;
   var query;
-
-  // expand
-  var expand = qs.expand || [];
-  var omit = "-secret -hash -salt -__v -log";
 
   try {
     _id = mongoose.Types.ObjectId(id);
     query = { _id : _id };
   } catch (err) {
     // /api/1/users/email@host.com
-    query = { email : id };
+    if (!domain && id.indexOf("@") > 0) {
+      var email = id.split("@"); 
+      id = email[0];
+      domain = email[1];
+    }
+    query = { username: id, domain: domain };
   }
 
-  var task = Model.User.findOne(query, omit);
-  var paths = Model.User.schema.paths;
-  var keys = Object.keys(paths);
-
-  for (var i = 0; i < expand.length; i++) {
-    var key = expand[i];
-
-    if (paths[key]) {
-      var options = paths[key].options || {};
-      if ( typeof options.type == typeof ObjectId
-        || typeof options.ref == "string"){
-        task.populate(expand[i], "-__v -_w");
-      }
+  var findOne = function(query) {
+    return function(next) {
+      Model.User.findOne(query, next);
     }
   }
 
-  var promise = task.exec();
-  promise.addErrback(cb);
-  promise.then(function(retrieved){
-    cb (null, retrieved);
-  });
+  co(function*() {
+    if (query.domain && !(ObjectId.isValid(query.domain) && typeof(query.domain) === "object")) {
+      var domain = yield self.findDomainId(query.domain);
+      if (domain && domain._id) {
+        query.domain = domain._id;
+      } else {
+        return cb(null, {});
+      }
+    }
+
+    var result = yield findOne(query);
+    return cb(null, result);
+  })();
+
 }
 
 User.prototype.create = function (ctx, options, cb) {
 
+  var self = this;
   var body = options.body;
+  body.object = "user";
   var createTransaction = function(next) {
      QueueModel.create({
        command: QueueCommands.types.CREATE,
        args: body,
-       state: QueueStates.types.PENDING,
+       state: QueueStates.types.NEW,
        createdDate: new Date
      }, next); 
   }
 
   var register = function(err, result) {
     if (err) {
-      console.log(err);
       return cb(err);
     }
     body.pendingTransaction = result._id;
-    Model.User.register (body, function (err, data){
 
-      if (err) {
-        return cb (err);
+    co(function*() {
+      if (!(ObjectId.isValid(body.domain) && typeof(body.domain) === "object")) {
+        var domain = yield self.findDomainId(body.domain);
+        body.domain = domain._id;
       }
-
-      if (!data) {
-        // boom
+      if (body.group == null) {
+        delete(body.group);
       }
+      Model.User.register (body, function (err, data){
 
-      var object = {
-        object : "user",
-      }
+        if (err) {
+          console.log(err);
+          return cb (err);
+        }
 
-      var omit = ["hash", "log"];
-      object = _.merge(object, data.toJSON());
-      object = _.omit (object, omit);
-      return cb (null, object);
-    });
+        if (!data) {
+          // boom
+        }
+
+        var object = {
+          object : "user",
+        }
+
+        var omit = ["hash", "log"];
+        object = _.merge(object, data.toJSON());
+        object = _.omit (object, omit);
+        return cb (null, object);
+      });
+    })();
   }
 
   createTransaction(register);
@@ -259,6 +281,24 @@ User.prototype.update = function (ctx, options, cb) {
 
   var body = options.body;
   var id = ctx.params.id;
+
+  var save = function(data) {
+    delete data.log;
+    data.save(function (err, user){
+
+      if (err) return cb(boom.badRequest (err.message));
+
+      var object = {
+        object : "user",
+      }
+
+      var omit = ["hash", "log"];
+      object = _.merge(object, user.toJSON());
+      object = _.omit (object, omit);
+      return cb (null, object);
+
+    });
+  }
 
   Model.User.findById(id, function(err, data){
     if (err) {
@@ -275,22 +315,14 @@ User.prototype.update = function (ctx, options, cb) {
       }
     }
 
-    delete data.log;
+    if (body.password) {
+      data.setPassword(body.password, function() {
+        save(data);
+      });
+    } else {
+      save(data);
+    }
 
-    data.save(function (err, user){
-
-      if (err) return cb(boom.badRequest (err.message));
-
-      var object = {
-        object : "user",
-      }
-
-      var omit = ["hash", "log"];
-      object = _.merge(object, user.toJSON());
-      object = _.omit (object, omit);
-      return cb (null, object);
-
-    });
   });
 }
 
@@ -348,36 +380,65 @@ User.prototype.authenticate = function (ctx, options, cb) {
   
   var self = this;
   var body = options.body;
-  var username = body.email;
+  var email = body.email;
   var password = body.password;
   var omit = options.omit || ["hash", "secret", "log"];
+  var username;
+  var domain;
 
-  Model.User.authenticate (username, password, function (err, authenticated) {
+  var id = email.split("@");
 
-    if (err) {
-      return cb (boom.unauthorized ({ username : username, password : password, err : err }));
+  var unauthorized = function(err) {
+    return cb (boom.unauthorized ({ email : email, password : password, err : err }));
+  }
+
+  domain = id.pop();
+  username = id.pop();
+
+  co(function*() {
+    if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
+      domain = yield self.findDomainId(domain);
+      if (domain && domain._id) {
+        domain = domain._id;
+      } else {
+        return unauthorized("Domain not recognized");
+      }
     }
 
-    if (!authenticated) {
-      return cb (boom.unauthorized ("not authenticated"));
-    }
+    Model.User.authenticate (username, domain, password, function (err, authenticated) {
 
-    var object = {
-      object: "user"
-    }
+      if (err) {
+        unauthorized(err);
+      }
 
-    object = _.merge(object, authenticated.toJSON());
-    object = _.omit(object, omit);
+      if (!authenticated) {
+        return cb (boom.unauthorized ("not authenticated"));
+      }
 
-    object.roles = authenticated.roles;
+      var object = {
+        object: "user"
+      }
 
-    return cb (null, object);
-  });
+      object = _.merge(object, authenticated.toJSON());
+      object = _.omit(object, omit);
+
+      object.roles = authenticated.roles;
+
+      return cb (null, object);
+    });
+  })();
 }
 
 User.prototype.account = function(ctx, options, cb){
   cb (null, ctx.session);
 }
+
+User.prototype.findDomainId = function(domain) {
+  return function(cb) {
+    DomainModel.Domain.findOne({name: domain}, cb);
+  }
+}
+
 
 
 module.exports = function(options) {

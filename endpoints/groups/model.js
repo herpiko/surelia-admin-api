@@ -211,6 +211,7 @@ Group.prototype.update = function (ctx, options, cb) {
 }
 
 Group.prototype.remove = function (ctx, options, cb){
+
   var ids = [];
   if (ctx.params.id) {
     ids.push (ctx.params.id);
@@ -228,7 +229,6 @@ Group.prototype.remove = function (ctx, options, cb){
     if (err) return cb (err);
     cb (null, {object : "group", data : ids})
   });
-
 }
 
 module.exports = function(options) {
