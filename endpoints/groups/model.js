@@ -43,6 +43,11 @@ Group.prototype.search = function (query, ctx, options, cb) {
   var self = this;
   var qs = ctx.query;
   var domain = ctx.params.id;
+  var session = ctx.session;
+  var group;
+  if (session && session.user && session.user.group) {
+    group = session.user.group._id;
+  }
 
   // skip, limit, sort
   var skip = qs.skip || 0;
@@ -94,6 +99,11 @@ Group.prototype.search = function (query, ctx, options, cb) {
     } else {
       query.domain = domain;
     }
+
+    if (group) {
+      query["_id"] = group;
+    }
+
     var task = Model.Group.find(query, omit);
     var paths = Model.Group.schema.paths;
     var keys = Object.keys(paths);

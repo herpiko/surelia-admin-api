@@ -89,6 +89,11 @@ User.prototype.search = function (query, ctx, options, cb) {
   var qs = ctx.query;
   var self = this;
   var domain = ctx.params.domain;
+  var session = ctx.session;
+  var group;
+  if (session && session.user && session.user.group) {
+    group = session.user.group._id;
+  }
 
   // skip, limit, sort
   var skip = qs.skip || 0;
@@ -159,6 +164,10 @@ User.prototype.search = function (query, ctx, options, cb) {
 
         cb (null, obj);
        }
+    }
+
+    if (group) {
+      query["group"] = group;
     }
 
     var task = Model.User.find(query, omit);
@@ -242,6 +251,13 @@ User.prototype.create = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
   body.object = "user";
+
+  var session = ctx.session;
+  var group;
+  if (session && session.user && session.user.group) {
+    group = session.user.group._id;
+  }
+
   var createTransaction = function(next) {
      QueueModel.create({
        command: QueueCommands.types.CREATE,
@@ -279,6 +295,11 @@ User.prototype.create = function (ctx, options, cb) {
       if (body.group == null) {
         delete(body.group);
       }
+
+      if (group) {
+        body.group = group;
+      }
+
       Model.User.register (body, function (err, data){
 
         if (err) {
