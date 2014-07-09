@@ -172,6 +172,7 @@ Server.prototype.create = function (ctx, options, cb) {
       }
     }
 
+    body.createdDate = new Date;
     Model.Server.create (body, function (err, data){
       if (err) {
         if (err.code == 11000) {
