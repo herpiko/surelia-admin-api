@@ -8,8 +8,7 @@ function Routes (name, mid, handle) {
   var router = new Router(name, mid);
 
   // groups
-  router.GET ("/groups", handle.find);
-  router.GET ("/groups/:id", handle.findOne);
+  router.GET ("/groups/:id", handle.find);
   router.POST ("/groups", handle.create);
 
   router.PUT ("/groups/:id", handle.update);

@@ -2,6 +2,7 @@ var request = require ("supertest").agent;
 var resources = "../../resources";
 var async = require ("async");
 var qsify = require ("koa-qs");
+var should = require("should");
 
 // bootstrap
 var resources = __dirname + "/../../resources";
@@ -146,6 +147,18 @@ describe ("groups", function (){
     .send (data)
     .expect (200)
     .end (function (err, res){
+      done(err, res);
+    });
+  });
+
+  it ("list group in a domain", function (done){
+    var uri = "/api/1/groups/example2.com";
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end (function (err, res){
+      res.body.should.have.properties("data", "count", "total", "object");
+      res.body.data.should.have.length(2);
       done(err, res);
     });
   });

@@ -40,7 +40,9 @@ Group.prototype.findDomainId = function(domain) {
 
 Group.prototype.search = function (query, ctx, options, cb) {
 
+  var self = this;
   var qs = ctx.query;
+  var domain = ctx.params.id;
 
   // skip, limit, sort
   var skip = qs.skip || 0;
@@ -86,34 +88,43 @@ Group.prototype.search = function (query, ctx, options, cb) {
     query = { $and : [ query, options.and ]};
   }
 
-  var task = Model.Group.find(query, omit);
-  var paths = Model.Group.schema.paths;
-  var keys = Object.keys(paths);
+  co(function*() {
+    if (domain && !(ObjectId.isValid(domain) && typeof(domain) === "object")) {
+      query.domain = yield self.findDomainId(domain);
+    } else {
+      query.domain = domain;
+    }
+    var task = Model.Group.find(query, omit);
+    var paths = Model.Group.schema.paths;
+    var keys = Object.keys(paths);
 
-  task.skip (skip);
-  task.limit (limit);
-  task.sort (sort);
+    task.populate("creator", "_id username");
+    task.populate("domain", "_id name");
+    task.skip (skip);
+    task.limit (limit);
+    task.sort (sort);
 
-  task.sort({ lastUpdated : -1});
+    task.sort({ lastUpdated : -1});
 
-  var promise = task.exec();
-  promise.addErrback(cb);
-  promise.then(function(retrieved){
-    Model.Group.count(query, function(err, total){
+    var promise = task.exec();
+    promise.addErrback(cb);
+    promise.then(function(retrieved){
+      Model.Group.count(query, function(err, total){
 
-      if (err) return cb (err);
+        if (err) return cb (err);
 
-      var obj = {
-        object : "list",
+        var obj = {
+          object : "list",
         total : total,
         count : retrieved.length,
         data : retrieved
-      }
+        }
 
-      cb (null, obj);
+        cb (null, obj);
 
+      });
     });
-  });
+  })()
 }
 
 Group.prototype.findOne = function (ctx, options, cb) {
@@ -163,6 +174,7 @@ Group.prototype.findOne = function (ctx, options, cb) {
 Group.prototype.create = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
+  var session = ctx.session;
 
   co(function*() {
     if (body.domain && !(ObjectId.isValid(body.domain) && typeof(body.domain) === "object")) {
@@ -172,6 +184,11 @@ Group.prototype.create = function (ctx, options, cb) {
       }
     }
 
+    if (session && session.user) {
+      body.creator = session.user._id;
+      body.domain = session.user.domain;
+    }
+    body.createdDate = new Date;
     Model.Group.create (body, function (err, data){
       if (err) {
         if (err.code == 11000) {
