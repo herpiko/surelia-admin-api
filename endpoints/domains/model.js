@@ -31,7 +31,6 @@ function Domain (options) {
 
 Domain.prototype.find = function(ctx, options, cb) {
   var query = {
-    state: DomainStates.types.ACTIVE,
   }
 
   this.search (query, ctx, options, cb);
@@ -198,7 +197,14 @@ Domain.prototype.findOne = function (ctx, options, cb) {
 }
 
 Domain.prototype.create = function (ctx, options, cb) {
+  var session = ctx.session;
+
   var body = options.body;
+
+  if (session.user) {
+    body.creator = session.user._id;
+  }
+
   body.object = "domain";
   var createTransaction = function(next) {
      QueueModel.create({
@@ -214,6 +220,7 @@ Domain.prototype.create = function (ctx, options, cb) {
       return cb(err);
     }
     body.pendingTransaction = result._id;
+    body.createdDate = new Date();
     Model.Domain.create (body, function (err, data){
       if (err) {
         QueueModel.remove({_id: result._id}, function() {
