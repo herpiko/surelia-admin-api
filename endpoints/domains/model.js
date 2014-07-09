@@ -31,7 +31,7 @@ function Domain (options) {
 
 Domain.prototype.find = function(ctx, options, cb) {
   var query = {
-    state: QueueStates.types.ACTIVE,
+    state: DomainStates.types.ACTIVE,
   }
 
   this.search (query, ctx, options, cb);
@@ -84,6 +84,8 @@ Domain.prototype.search = function (query, ctx, options, cb) {
   // like or exact
   var like = qs.like || {};
   var exact = qs.exact || {};
+  // in
+  var inOperator = qs.in || {};
 
   // expand
   var expand = qs.expand || [];
@@ -128,7 +130,8 @@ Domain.prototype.search = function (query, ctx, options, cb) {
   task.limit (limit);
   task.sort (sort);
 
-  task.sort({ lastUpdated : -1});
+  task.sort({ modified : -1});
+  task.populate("mailboxServer", "name");
 
   var promise = task.exec();
   promise.addErrback(cb);
