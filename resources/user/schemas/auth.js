@@ -50,7 +50,9 @@ function auth (schema, options) {
 
     query[loginPath] = username;
     query.domain = domain;
-    this.findOne(query, function (err, model) {
+    var t = this.findOne(query);
+    t.populate("group", "_id name");
+    t.exec(function (err, model) {
 
       if (err) return next(err)
       if (!model) return next("does not exist");

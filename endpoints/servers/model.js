@@ -51,6 +51,8 @@ Server.prototype.search = function (query, ctx, options, cb) {
   var like = qs.like || {};
   var exact = qs.exact || {};
 
+  var inOperator = qs.in || {};
+
   // expand
   var expand = qs.expand || [];
   var omit = "-secret -hash -salt -__v -log";
@@ -67,6 +69,15 @@ Server.prototype.search = function (query, ctx, options, cb) {
 
     for (var key in exact) {
       query [key] = exact[key];
+    }
+
+    for (var key in inOperator) {
+      query [key] = query [key] || {};
+      if (_.isArray(inOperator[key])) {
+        query [key]["$in"] = inOperator[key];
+      } else {
+        query [key]["$in"] = [inOperator[key]];
+      }
     }
 
   } else {
@@ -111,7 +122,6 @@ Server.prototype.search = function (query, ctx, options, cb) {
       }
 
       cb (null, obj);
-
     });
   });
 }

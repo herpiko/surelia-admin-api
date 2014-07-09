@@ -150,7 +150,25 @@ describe ("servers", function (){
     });
   });
 
+  it ("list server", function (done){
+    var uri = "/api/1/servers";
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end (function (err, res){
+      done(err, res);
+    });
+  });
 
+  it ("list queue server", function (done){
+    var uri = "/api/1/servers?in[type]=queue";
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end (function (err, res){
+      done(err, res);
+    });
+  });
 
 
 });
