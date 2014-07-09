@@ -101,6 +101,23 @@ describe ("Users", function (){
     });
   });
 
+  it ("Get admin users", function (done){
+
+    // GET
+    var uri = "/api/1/users/example2.com/active?in[roles]=admin";
+
+    request (toServer())
+    .get (uri)
+    .expect (200)
+    .end(function (err, res){
+      console.log(res.body);
+      res.body.should.have.properties("total", "object", "data", "count");
+      res.body.data.should.have.length(0);
+      done(err);
+    });
+  });
+
+ 
 
   it ("Get active users", function (done){
 
@@ -111,6 +128,7 @@ describe ("Users", function (){
     .get (uri)
     .expect (200)
     .end(function (err, res){
+      console.log(res.body);
       res.body.should.have.properties("total", "object", "data", "count");
       res.body.data.should.have.length(1);
       done(err);

@@ -98,6 +98,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   // like or exact
   var like = qs.like || {};
   var exact = qs.exact || {};
+  var inOperator = qs.in || {};
 
   // expand
   var expand = qs.expand || [];
@@ -115,6 +116,15 @@ User.prototype.search = function (query, ctx, options, cb) {
 
     for (var key in exact) {
       query [key] = exact[key];
+    }
+
+    for (var key in inOperator) {
+      query [key] = query [key] || {};
+      if (_.isArray(inOperator[key])) {
+        query [key]["$in"] = inOperator[key];
+      } else {
+        query [key]["$in"] = [inOperator[key]];
+      }
     }
 
   } else {
