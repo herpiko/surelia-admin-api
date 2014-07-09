@@ -162,6 +162,8 @@ User.prototype.search = function (query, ctx, options, cb) {
     }
 
     var task = Model.User.find(query, omit);
+    task.populate("mailboxServer", "_id name");
+    task.populate("group", "_id name");
     var paths = Model.User.schema.paths;
     var keys = Object.keys(paths);
 
@@ -481,7 +483,10 @@ User.prototype.findDomainId = function(domain) {
 User.prototype.findServerId = function(name) {
   return function(cb) {
     ServerModel.Server.findOne({
-      name: name,
+      $or : [
+        { name : name },
+        { _id : name },
+      ],
       type: { $in: ["mailbox"] }
     }, cb);
   }
