@@ -298,6 +298,7 @@ User.prototype.create = function (ctx, options, cb) {
 
       if (group) {
         body.group = group;
+        body.domain = ctx.session.user.domain;
       }
 
       Model.User.register (body, function (err, data){
