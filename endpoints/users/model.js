@@ -523,6 +523,9 @@ User.prototype.suggest = function(ctx, options, cb) {
     return name;
   }
 
+  if (!name) {
+    return cb(boom.badRequest ("Give me a name"));
+  }
   var candidate = trim(name);
   var query = Model.User.find({
     $or: [
