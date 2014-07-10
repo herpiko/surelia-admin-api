@@ -43,7 +43,6 @@ function User (options) {
 
 User.prototype.find = function(ctx, options, cb) {
   var query = {
-    state: QueueStates.types.ACTIVE,
   }
 
   this.search (query, ctx, options, cb);

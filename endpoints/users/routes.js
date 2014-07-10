@@ -8,6 +8,7 @@ function Routes (name, mid, handle) {
   var router = new Router(name, mid);
 
   // users
+  router.GET ("/users/:domain", handle.find);
   router.GET ("/users/:domain/active", handle.findActive);
   router.GET ("/users/:domain/inactive", handle.findInactive);
   router.GET ("/users/:domain/pending", handle.findPending);
