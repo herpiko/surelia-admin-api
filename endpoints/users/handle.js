@@ -61,3 +61,8 @@ User.prototype.account = function * (){
     yield handle.get (this, "account", {});
 }
 
+User.prototype.suggest = function * (){
+  yield handle.post (this, "suggest", {});
+}
+
+

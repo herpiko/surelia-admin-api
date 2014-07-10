@@ -333,4 +333,78 @@ describe ("Users", function (){
       done(err);
     });
   });
+
+  it ("suggests a username", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "Sri Rahayu Jasa Santika III" })
+    .expect (200)
+    .end(function (err, res){
+      console.log(res.body);
+      done(err);
+    });
+  });
+
+  it ("suggests a username which name already exists", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "Ro Be RT" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("ro.be.rt.3");
+      done(err);
+    });
+  });
+
+  it ("suggests a username which name already exists", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "Ru Di A" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("ru.di.a.1");
+      done(err);
+    });
+  });
+
+
+  it ("suggests a username which name already exists", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "RoBe" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("robe.1");
+      done(err);
+    });
+  });
+
+  it ("suggests a username which name does not exist", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "Bo Be" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("bo.be");
+      done(err);
+    });
+  });
+
+
+
+
 });

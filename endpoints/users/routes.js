@@ -15,6 +15,7 @@ function Routes (name, mid, handle) {
   router.GET ("/users/:domain/:id", handle.findOne);
   router.GET ("/users/:id", handle.findOne);
   router.POST ("/users", handle.create);
+  router.POST ("/users/suggest", handle.suggest);
   router.PUT ("/users/:id", handle.update);
   router.DEL ("/users/:id", handle.remove);
   router.DEL ("/users", handle.remove);

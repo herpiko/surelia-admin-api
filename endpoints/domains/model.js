@@ -201,7 +201,7 @@ Domain.prototype.create = function (ctx, options, cb) {
 
   var body = options.body;
 
-  if (session.user) {
+  if (session && session.user) {
     body.creator = session.user._id;
   }
 

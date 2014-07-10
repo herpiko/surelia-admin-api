@@ -1,6 +1,6 @@
 // insert admin only
 var mongoose = require ("mongoose");
-mongoose.connect ("mongodb://localhost/sureliaAdmin");
+mongoose.connect ("mongodb://localhost/pnsmailAdmin");
 
 process.env.CRYPTO_KEYS = ["admin", "keys"];
 var schemas = require ("../schemas");
@@ -13,7 +13,7 @@ var Domain = domainSchemas.Domain;
 Domain.remove(function(){
   User.remove(function(){
     var domain = {
-      name : "example.com",
+      name : "pnsmail.go.id",
       state : "active",
       creator : "000000000000000000000000",
       createdDate : new Date
@@ -21,7 +21,7 @@ Domain.remove(function(){
 
     var user = {
       username: "admin",
-      password : "12345",
+      password : "pnsmail123",
       name : "Admin",
       mailboxServer : "000000000000000000000000",
       roles : ["admin"]
@@ -34,7 +34,7 @@ Domain.remove(function(){
         if (err) throw err;
         User.activate(registered.secret, function(err, activated){
           if (err) throw err;
-          console.log ("admin@example.com is created", user.password);
+          console.log ("admin@pnsmail.go.id is created", user.password);
           mongoose.disconnect();
         });
       });

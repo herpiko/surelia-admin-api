@@ -14,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "^0.9.0",
+    "co": "^3.0.6",
     "co-body": "0.0.1",
     "co-busboy": "^1.0.2",
     "debug": "^1.0.1",
@@ -31,6 +32,7 @@
     "nan-bcrypt": "^0.7.9",
     "panas": "0.0.10",
     "qs": "^0.6.6",
+    "request": "^2.37.0",
     "serializer": "0.0.3",
     "thunkify": "^2.1.2"
   },
