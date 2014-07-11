@@ -30,7 +30,13 @@ function Domain (options) {
 }
 
 Domain.prototype.find = function(ctx, options, cb) {
-  var query = {
+  var session = ctx.session;
+  var query = {};
+  if (session && 
+      session.user &&
+      session.user.group) {
+        // Local admin
+    query["_id"] = session.user.domain;
   }
 
   this.search (query, ctx, options, cb);
