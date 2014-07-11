@@ -196,6 +196,9 @@ Group.prototype.create = function (ctx, options, cb) {
 
     if (session && session.user) {
       body.creator = session.user._id;
+    }
+
+    if (session && session.user.group) {
       body.domain = session.user.domain;
     }
     body.createdDate = new Date;
