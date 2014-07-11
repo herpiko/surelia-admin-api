@@ -531,7 +531,7 @@ User.prototype.suggest = function(ctx, options, cb) {
       { username: candidate },
       {
         username: {
-               $regex: candidate + ".[0-9]+$"  
+               $regex: "^" + candidate + ".[0-9]+$"  
              }
       }
   ]
