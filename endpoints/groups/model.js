@@ -94,13 +94,17 @@ Group.prototype.search = function (query, ctx, options, cb) {
   }
 
   co(function*() {
+
     if (domain && !(ObjectId.isValid(domain) && typeof(domain) === "object")) {
       query.domain = yield self.findDomainId(domain);
     } else {
       query.domain = domain;
     }
 
-    if (group) {
+    if (group && 
+      group != Model.Group.domainAdmin._id &&
+      group != Model.Group.superAdmin._id
+      ) {
       query["_id"] = group;
     }
 
@@ -119,20 +123,23 @@ Group.prototype.search = function (query, ctx, options, cb) {
     var promise = task.exec();
     promise.addErrback(cb);
     promise.then(function(retrieved){
-      Model.Group.count(query, function(err, total){
+      if (group) {
+        if (group == Model.Group.domainAdmin._id) {
+          retrieved.unshift(Model.Group.domainAdmin);
+        }
+      } else {
+        retrieved.unshift(Model.Group.superAdmin);
+        retrieved.unshift(Model.Group.domainAdmin);
+      }
 
-        if (err) return cb (err);
-
-        var obj = {
-          object : "list",
-        total : total,
+      var obj = {
+        object : "list",
+        total : retrieved.length,
         count : retrieved.length,
         data : retrieved
-        }
+      }
 
-        cb (null, obj);
-
-      });
+      cb (null, obj);
     });
   })()
 }
@@ -199,7 +206,9 @@ Group.prototype.create = function (ctx, options, cb) {
     }
 
     if (session && session.user.group) {
+      // Local admin
       body.domain = session.user.domain;
+      console.log("localadmin");
     }
     body.createdDate = new Date;
     Model.Group.create (body, function (err, data){

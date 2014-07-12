@@ -166,7 +166,10 @@ User.prototype.search = function (query, ctx, options, cb) {
     }
 
     if (group) {
-      query["group"] = group;
+      if (group != ObjectId("100000000000000000000001") &&
+          group != ObjectId("000000000000000000000000")) {
+        query["group"] = group;
+      }
     }
 
     var task = Model.User.find(query, omit);

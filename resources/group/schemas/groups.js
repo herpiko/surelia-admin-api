@@ -3,6 +3,7 @@
  */
 var debug = require ("debug") ("api-resources-group-schemas-group");
 var mongoose = require ("mongoose");
+var ObjectId = mongoose.Types.ObjectId;
 var _ = require ("lodash");
 var diff = require("deep-diff");
 
@@ -24,6 +25,8 @@ try {
 } catch (err){
   GroupLog = mongoose.model ("GroupLog", GroupLogSchema);
 }
+
+
 
 function audit (trail, done) {
   var log = new GroupLog(trail);
@@ -55,6 +58,18 @@ try {
 }
 catch (err) {
   Group = mongoose.model ("Group", GroupSchema);
+}
+
+Group.superAdmin = {
+  _id: ObjectId("000000000000000000000000"),
+  description: "Super Admin",
+  name: "Super Admin"
+}
+
+Group.domainAdmin = {
+  _id: ObjectId("100000000000000000000001"),
+  description: "Domain Admin",
+  name: "Domain Admin"
 }
 
 GroupSchema.virtual("previous").set(function(previous) {

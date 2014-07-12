@@ -404,6 +404,20 @@ describe ("Users", function (){
     });
   });
 
+  it ("suggests a username which name does not exist", function (done){
+    var uri = "/api/1/users/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "Be Rt" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("be.rt");
+      done(err);
+    });
+  });
+
 
 
 
