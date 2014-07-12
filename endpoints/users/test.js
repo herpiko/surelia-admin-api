@@ -335,7 +335,7 @@ describe ("Users", function (){
   });
 
   it ("suggests a username", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)
@@ -348,7 +348,7 @@ describe ("Users", function (){
   });
 
   it ("suggests a username which name already exists", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)
@@ -362,7 +362,7 @@ describe ("Users", function (){
   });
 
   it ("suggests a username which name already exists", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)
@@ -377,7 +377,7 @@ describe ("Users", function (){
 
 
   it ("suggests a username which name already exists", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)
@@ -391,7 +391,7 @@ describe ("Users", function (){
   });
 
   it ("suggests a username which name does not exist", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)
@@ -405,7 +405,7 @@ describe ("Users", function (){
   });
 
   it ("suggests a username which name does not exist", function (done){
-    var uri = "/api/1/users/suggest";
+    var uri = "/api/1/users/example3.com/suggest";
 
     request (toServer())
     .post (uri)

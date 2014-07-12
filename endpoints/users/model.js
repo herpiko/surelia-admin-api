@@ -517,7 +517,9 @@ User.prototype.findServerId = function(name) {
 }
 
 User.prototype.suggest = function(ctx, options, cb) {
+  var self = this;
   var name = options.body.name;
+  var domain = ctx.params.domain;
   var trim = function(name) {
     var name = name.replace(/ +/g, ".");
     name = name.toLowerCase();
@@ -525,44 +527,54 @@ User.prototype.suggest = function(ctx, options, cb) {
     return name;
   }
 
-  if (!name) {
-    return cb(boom.badRequest ("Give me a name"));
-  }
   var candidate = trim(name);
-  var query = Model.User.find({
-    $or: [
-      { username: candidate },
-      {
-        username: {
-               $regex: "^" + candidate + ".[0-9]+$"  
-             }
-      }
-  ]
-  }, "username");
-  query.sort({username:1});
-  query.exec(function(err, result) {
-    if (err) {
-      return cb(err);
+  co(function*() {
+    if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
+      domain = yield self.findDomainId(domain);
+    } 
+    if (!name) {
+      return cb(boom.badRequest ("Give me a name"));
     }
-    if (result.length == 0) {
+    if (!domain) {
+      return cb(boom.badRequest ("Give me a domain"));
+    }
+
+    var query = Model.User.find({
+      $or: [
+        { username: candidate },
+        {
+          username: {
+            $regex: "^" + candidate + ".[0-9]+$"  
+          }
+        },
+      ],
+      domain: domain
+    }, "username");
+    query.sort({username:1});
+    query.exec(function(err, result) {
+      if (err) {
+        return cb(err);
+      }
+      if (result.length == 0) {
+        return cb(null, {username: candidate});
+      }
+      var entry  = result.pop();
+      if (entry && 
+        entry.username && 
+        entry.username.indexOf(".") > 0) {
+          var splits = entry.username.split(".");
+          var last = splits.pop();
+          if (isNaN(last)) {
+            candidate += ".1";
+          } else {
+            candidate = splits.join(".") + "." + (parseInt(last) + 1);
+          }
+        } else {
+          candidate += ".1";
+        }
       return cb(null, {username: candidate});
-    }
-    var entry  = result.pop();
-    if (entry && 
-      entry.username && 
-      entry.username.indexOf(".") > 0) {
-      var splits = entry.username.split(".");
-      var last = splits.pop();
-      if (isNaN(last)) {
-        candidate += ".1";
-      } else {
-        candidate = splits.join(".") + "." + (parseInt(last) + 1);
-      }
-    } else {
-      candidate += ".1";
-    }
-    return cb(null, {username: candidate});
-  });
+    });
+  })();
 
 }
 
