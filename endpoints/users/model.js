@@ -521,7 +521,8 @@ User.prototype.suggest = function(ctx, options, cb) {
   var name = options.body.name;
   var domain = ctx.params.domain;
   var trim = function(name) {
-    var name = name.replace(/ +/g, ".");
+    var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:'"\|<>/\?,'`\.]/g, "");
+    name = name.replace(/ +/g, ".");
     name = name.toLowerCase();
 
     return name;

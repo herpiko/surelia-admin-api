@@ -418,6 +418,20 @@ describe ("Users", function (){
     });
   });
 
+  it ("suggests a username from an exotic name", function (done){
+    var uri = "/api/1/users/example3.com/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "R. Ma'rifat Al`ar'if!@#$%^&*()_+-=;:][}{'\"\|/?.>,<" })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("r.marifat.alarif");
+      done(err);
+    });
+  });
+
 
 
 
