@@ -174,6 +174,11 @@ Server.prototype.findOne = function (ctx, options, cb) {
 Server.prototype.create = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
+  var session = ctx.session;
+
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
 
   co(function*() {
     if (body.domain && !(ObjectId.isValid(body.domain) && typeof(body.domain) === "object")) {
@@ -211,6 +216,12 @@ Server.prototype.create = function (ctx, options, cb) {
 Server.prototype.update = function (ctx, options, cb) {
   var body = options.body;
   var id = ctx.params.id;
+  var session = ctx.session;
+
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
+
 
   var query = Model.Server.update({_id: id}, {
     $set: body
@@ -223,6 +234,11 @@ Server.prototype.update = function (ctx, options, cb) {
 }
 
 Server.prototype.remove = function (ctx, options, cb){
+  var session = ctx.session;
+
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
 
   var ids = [];
   if (ctx.params.id) {

@@ -205,6 +205,9 @@ Domain.prototype.findOne = function (ctx, options, cb) {
 Domain.prototype.create = function (ctx, options, cb) {
   var session = ctx.session;
 
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
   var body = options.body;
 
   if (session && session.user) {
@@ -262,6 +265,10 @@ Domain.prototype.update = function (ctx, options, cb) {
   var body = options.body;
   var id = ctx.params.id;
 
+  var session = ctx.session;
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
   Model.Domain.findById(id, function(err, data){
     if (err) {
       return cb (err);
@@ -296,6 +303,11 @@ Domain.prototype.update = function (ctx, options, cb) {
 }
 
 Domain.prototype.setState = function (state, ctx, options, cb){
+
+  var session = ctx.session;
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
   var ids = [];
   if (ctx.params.id) {
     ids.push (ctx.params.id);
@@ -330,6 +342,10 @@ Domain.prototype.setState = function (state, ctx, options, cb){
 }
 
 Domain.prototype.remove = function (ctx, options, cb){
+  var session = ctx.session;
+  if (session && session.user && session.user.group) {
+    return cb(boom.unauthorized ("Super Admin only"));
+  }
   var ids = [];
   if (ctx.params.id) {
     ids.push (ctx.params.id);
