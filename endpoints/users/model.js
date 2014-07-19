@@ -142,6 +142,7 @@ User.prototype.search = function (query, ctx, options, cb) {
       criterias.push(obj);
     });
     query["$" + operator] = criterias;
+    console.log(query);
   }
 
   if (options.and) {
@@ -378,7 +379,6 @@ User.prototype.update = function (ctx, options, cb) {
           return cb(boom.badRequest ("Bad server"));
         }
       }
-
 
       if (body.password) {
         data.setPassword(body.password, function() {

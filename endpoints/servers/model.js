@@ -5,6 +5,7 @@ var thunkified = helper.thunkified;
 var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
+var gearmanode = require('gearmanode');
 
 var ResourceServer = require ("../../resources/server");
 var Model = ResourceServer.schemas;
@@ -241,6 +242,71 @@ Server.prototype.remove = function (ctx, options, cb){
     cb (null, {object : "server", data : ids})
   });
 }
+
+
+Server.prototype.statOS = function (ctx, options, cb){
+  var id = ctx.params.id;
+  var client = gearmanode.client({servers: this.options.gearmand});
+
+  var job = client.submitJob("statOS", "", { unique: id });
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, JSON.parse(job.response));
+    client.close();
+  });
+};
+
+Server.prototype.statMailboxProcess = function (ctx, options, cb){
+  var id = ctx.params.id;
+  var client = gearmanode.client({servers: this.options.gearmand});
+
+  var job = client.submitJob("statProcessMailbox", "", { unique : id });
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, JSON.parse(job.response));
+    client.close();
+  });
+
+};
+
+Server.prototype.statTopReceiver = function (ctx, options, cb){
+  var id = ctx.params.id;
+  var client = gearmanode.client({servers: this.options.gearmand});
+
+  var job = client.submitJob("statTopReceiver", "", { unique: id });
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, JSON.parse(job.response));
+    client.close();
+  });
+
+};
+
+Server.prototype.statTopFailures = function (ctx, options, cb){
+  var id = ctx.params.id;
+  var client = gearmanode.client({servers: this.options.gearmand});
+
+  var job = client.submitJob("statTopFailures", "", { unique : id });
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, JSON.parse(job.response));
+    client.close();
+  });
+
+};
+
+Server.prototype.statTopRemoteFailures = function (ctx, options, cb){
+  var client = gearmanode.client({servers: this.options.gearmand});
+  var id = ctx.params.id;
+
+  var job = client.submitJob("statTopRemoteFailures", "", { unique: id });
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, JSON.parse(job.response));
+    client.close();
+  });
+
+};
 
 module.exports = function(options) {
   return thunkified (Server(options));

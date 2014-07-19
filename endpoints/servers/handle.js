@@ -33,3 +33,24 @@ Server.prototype.create = function * (){
   yield handle.post (this, "create", {});
 }
 
+Server.prototype.statOS = function * (){
+  yield handle.get (this, "statOS", {});
+}
+
+Server.prototype.statMailboxProcess = function * (){
+  yield handle.get (this, "statMailboxProcess", {});
+}
+
+Server.prototype.statTopReceiver = function * (){
+  yield handle.get (this, "statTopReceiver", {});
+}
+
+Server.prototype.statTopFailures = function * (){
+  yield handle.get (this, "statTopFailures", {});
+}
+
+Server.prototype.statTopRemoteFailures = function * (){
+  yield handle.get (this, "statTopRemoteFailures", {});
+}
+
+

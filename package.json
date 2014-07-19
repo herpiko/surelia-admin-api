@@ -20,6 +20,8 @@
     "debug": "^1.0.1",
     "deep-diff": "^0.1.7",
     "finished": "^1.2.1",
+    "gearman": "^1.0.0",
+    "gearmanode": "^0.1.7",
     "kasta": "0.0.1",
     "koa": "^0.7.0",
     "koa-compose": "^2.3.0",

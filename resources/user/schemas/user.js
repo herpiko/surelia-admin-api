@@ -57,6 +57,7 @@ var UserSchema = new Schema({
   modified : { type : Date },
   quota : { type : Number },
   secret : { type : String },
+  hash: { type : String },
   profile : { type : Object },
   roles : [ { type : String, enum : Roles.enum } ],
   state : { type : String, enum : States.enum, default: States.types.UNKNOWN },
