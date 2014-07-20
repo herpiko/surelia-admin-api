@@ -4,6 +4,7 @@ var thunkified = helper.thunkified;
 var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
+var gearmanode = require('gearmanode');
 
 var ResourceDomain = require ("../../resources/domain");
 var Model = ResourceDomain.schemas;
@@ -203,6 +204,7 @@ Domain.prototype.findOne = function (ctx, options, cb) {
 }
 
 Domain.prototype.create = function (ctx, options, cb) {
+  var self = this;
   var session = ctx.session;
 
   if (session && session.user && session.user.group) {
@@ -253,6 +255,15 @@ Domain.prototype.create = function (ctx, options, cb) {
       var omit = ["hash", "log"];
       object = _.merge(object, data.toJSON());
       object = _.omit (object, omit);
+
+      var client = gearmanode.client({servers: self.options.gearmand});
+      var job = client.submitJob("createDomain", "");
+      job.on("complete", function() {
+        console.log('RESULT: ' + job.response);
+        cb(null, JSON.parse(job.response));
+        client.close();
+      });
+
       return cb (null, object);
     });
   }
