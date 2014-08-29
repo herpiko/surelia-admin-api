@@ -2,6 +2,7 @@
 var mongoose = require ("mongoose");
 var bcrypt = require ("nan-bcrypt"); // todo: change to native bcrypt, or require ("bcrypt-nodejs") if it has problem
 var serializer = require ("serializer");
+var uuid = require("uuid");
 
 // Plugin
 function auth (schema, options) {
@@ -98,6 +99,16 @@ function auth (schema, options) {
 
     return this;
   })
+
+  // Request a password reset
+  schema.methods.resetPassword = function(next) {
+    var self = this;
+    self.secret = uuid.v4();
+    var expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + 3);
+    self.secretExpireDate = expireDate;
+    self.save(next);
+  };
 
   // Register a new user instance with the supplied attributes, passing
   // the new instance into the callback if no errors were found

@@ -16,6 +16,8 @@ module.exports = function(options){
 
   var app = koa();
   app.use(mount);
+  var user = require ("./resources/user/public")(options);
+  app.statics = [user];
 
   return app;
 }
