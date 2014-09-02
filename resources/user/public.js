@@ -42,7 +42,7 @@ var sendEmail = function(target, id) {
   }
 }
 
-service.post("/api/1.0/reset/request", function *() {
+service.post("/public-api/1/reset/request", function *() {
   var self = this;
   var param = yield parse(this);
   
@@ -72,7 +72,7 @@ service.post("/api/1.0/reset/request", function *() {
   }
 });
 
-service.post("/api/1.0/reset/claim", function *() {
+service.post("/public-api/1/reset/claim", function *() {
   var self = this;
   var param = yield parse(this);
   
