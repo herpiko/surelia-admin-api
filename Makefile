@@ -30,6 +30,14 @@ test-server:
 		--timeout 10000 \
 		endpoints/servers/test.js
 
+test-pages:
+	@NODE_ENV=test ./node_modules/.bin/mocha \
+		--require should \
+		--reporter spec \
+		--harmony \
+		--timeout 10000 \
+		endpoints/pages/test.js
+
 admin:
 	node --harmony resources/user/fixtures/seed.js
 

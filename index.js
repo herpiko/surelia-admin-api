@@ -5,6 +5,8 @@ var panas = require ("panas");
 var thunkify = require ("thunkify");
 var koa = require ("koa");
 var Router = require ("koa-router");
+var cors = require("koa-cors");
+
 
 module.exports = function(options){
 
@@ -15,7 +17,13 @@ module.exports = function(options){
   var mount = panas.api(options).burn();
 
   var app = koa();
+
+  var corsOptions = {
+    origin: "https://pnsmail.go.id"
+  }
+  app.use(cors(corsOptions));
   app.use(mount);
+
   var user = require ("./resources/user/public")(options);
   app.statics = [user];
 

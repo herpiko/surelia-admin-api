@@ -46,6 +46,7 @@ service.post("/api/1.0/reset/request", function *() {
   var self = this;
   var param = yield parse(this);
   
+  self.response.header = {"Oka":"12"};
   var spitErr = function(err) {
       console.log("x", err);
     self.status = 404;
