@@ -27,15 +27,20 @@ options =_.merge(policy, options);
 
 
 var app = qsify(require(index)(options));
+if (app.statics) {
+  for (var i = 0; i < app.statics.length; i ++) {
+    app.use(app.statics[i]);
+  }
+}
 app.on("error", function(err){console.log(err.stack)})
 
 var toServer = function (){ return app.listen() }
 
-var cleanUsers = function(done) {
+var cleanPages = function(done) {
   bootstrap(done);
 }
 
-before(cleanUsers);
+before(cleanPages);
 
 describe ("Pages", function (){
 
@@ -121,6 +126,26 @@ describe ("Pages", function (){
 
     list(done);
   });
+
+  it ("should read a page publicly", function (done){
+
+    function list(cb){
+      var uri = "/public-api/1/pages/abc-to-12";
+      request (toServer())
+      .get (uri)
+      .expect (200)
+      .end (function (err, res){
+        res.body.should.have.property("data");
+        res.body.data.should.have.length(1);
+        res.body.data[0].should.have.property("slug");
+        res.body.data[0].slug.should.eql("abc-to-12");
+        cb(err, res);
+      });
+    }
+
+    list(done);
+  });
+
 
   it ("should read a page", function (done){
 
