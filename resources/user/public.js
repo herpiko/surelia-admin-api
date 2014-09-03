@@ -62,7 +62,9 @@ service.post("/public-api/1/reset/request", function *() {
       user.resetPassword();
       self.status = 200;
       self.body = {message: "Success", expireDate: user.secretExpireDate};
-      sendEmail(user.profile.email, user.secret);
+      setTimeout(function() {
+        sendEmail(user.profile.email, user.secret);
+      }, 0);
     } else {
       spitErr({message: "Invalid user"});
     }
