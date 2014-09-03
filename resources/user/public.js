@@ -84,7 +84,7 @@ service.post("/public-api/1/reset/claim", function *() {
     self.body = err;
   }
 
-  if (param.email && param.email.indexOf("@") > 0 && param.password, param.claim) {
+  if (param.email && param.email.indexOf("@") > 0 && param.password &&  param.claim) {
     var info = param.email.split("@");
     var domain = yield Domain.findOne({name: info[1]}).exec();
     if (!domain) return spitErr({message:"Invalid domain"});
