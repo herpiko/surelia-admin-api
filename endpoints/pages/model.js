@@ -149,6 +149,12 @@ Page.prototype.compose = function (ctx, options, cb) {
   }
 
   var data = options.body;
+  if (session && session.user) {
+    data.creator = session.user._id;
+  } else {
+    data.creator = ObjectId("000000000000");
+  }
+
   var id = ctx.params.id || data.id;
 
   if (id) {

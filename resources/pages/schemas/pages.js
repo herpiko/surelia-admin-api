@@ -48,12 +48,13 @@ function audit (trail, done) {
  * The schema
  */
 var PageSchema = new Schema({
-  username: { type : String, lowercase: true, trim: true, required: true},
   slug: { type : String, lowercase: true, trim: true, required: true },
   title: { type : String },
   text: { type : String },
   created : { type : Date },
   modified : { type : Date },
+  creator: { type : Schema.Types.ObjectId, ref : "User", default: Schema.Types.ObjectId, required: true }, 
+  state : { type : String, enum : States.enum, default: States.types.DRAFT},
 
   log : [{
     type : Schema.Types.ObjectId,

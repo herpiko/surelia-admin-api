@@ -5,7 +5,6 @@
 var pageStates = {
   DRAFT : "draft", // pending
   PUBLISHED: "published", // active
-  DELETED : "deleted", // deleted
 }
 
 

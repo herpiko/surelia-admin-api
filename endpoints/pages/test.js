@@ -49,7 +49,6 @@ describe ("Pages", function (){
 
     var data = {
       title: "Abc to  12 ",
-      username: "abc",
       text: "abc"
     }
     function create(data, cb){
@@ -72,7 +71,6 @@ describe ("Pages", function (){
 
     var data = {
       title: "Abc to 32 ",
-      username: "abc",
       text: "ebc"
     }
     function create(data, cb){
