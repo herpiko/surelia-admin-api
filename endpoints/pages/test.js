@@ -133,10 +133,8 @@ describe ("Pages", function (){
       .get (uri)
       .expect (200)
       .end (function (err, res){
-        res.body.should.have.property("data");
-        res.body.data.should.have.length(1);
-        res.body.data[0].should.have.property("slug");
-        res.body.data[0].slug.should.eql("abc-to-12");
+        res.body.should.have.property("text");
+        res.body.text.should.eql("<h1>Abc to  12</h1>\n\n<p>abc</p>");
         cb(err, res);
       });
     }

@@ -5,6 +5,7 @@ var parse = require("co-body");
 var options;
 var fs = require("fs");
 var Filter = require('filter');
+var markdown = require("markdown").markdown;
 
 service.get("/public-api/1/pages/:id", function *() {
   var self = this;
@@ -17,13 +18,12 @@ service.get("/public-api/1/pages/:id", function *() {
 
   var retrieved = yield task.exec();
 
-  var obj = {
-    object : "list",
-    count : retrieved.length,
-    data : retrieved
+  if (retrieved && retrieved.length == 1) {
+    self.body = { text: markdown.toHTML("#" + retrieved[0].title + "\n" + retrieved[0].text) };
+  } else {
+    self.status = 404; 
   }
 
-  self.body = obj;
 });
 
 module.exports = function(o) {
