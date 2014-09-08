@@ -532,6 +532,7 @@ User.prototype.suggest = function(ctx, options, cb) {
   var domain = ctx.params.domain;
   var trim = function(name) {
     var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:'"\|<>/\?,'`\.]/g, "");
+    name = name.trim();
     name = name.replace(/ +/g, ".");
     name = name.toLowerCase();
 

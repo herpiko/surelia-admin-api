@@ -432,6 +432,20 @@ describe ("Users", function (){
     });
   });
 
+  it ("suggests a username from an exotic name", function (done){
+    var uri = "/api/1/users/example3.com/suggest";
+
+    request (toServer())
+    .post (uri)
+    .send ({ name : "OMAMA   " })
+    .expect (200)
+    .end(function (err, res){
+      res.body.should.have.properties("username");
+      res.body.username.should.equal("omama");
+      done(err);
+    });
+  });
+
 
 
 
