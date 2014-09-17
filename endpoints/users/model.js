@@ -579,19 +579,19 @@ User.prototype.suggest = function(ctx, options, cb) {
     query.exec(function(err, result) {
 
       var f = function(a, b) {
-        if (a && b && a.username && b.username) {
+        if (a && b && a.username) {
           var a_i = a.username.lastIndexOf(".");
-          var b_i = b.username.lastIndexOf(".");
-          if (a_i > 0 && b_i > 0) {
-            a_num = a.username.substr(a_i + 1);
-            b_num = b.username.substr(b_i + 1);
-            return (a_i - b_i);
+          if (a_i > 0) {
+            a_num = parseInt(a.username.substr(a_i + 1));
+
+            if (a_num < b) return -1;
+            if (a_num > b) return 1;
+            return 0;
           }
         }
         return 0;
       };
-      result.sort(f);
-      console.log(result);
+      result = _.sortBy(result, f);
       if (err) {
         return cb(err);
       }
