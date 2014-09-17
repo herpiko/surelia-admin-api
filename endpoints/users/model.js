@@ -7,6 +7,9 @@ var _ = require ("lodash");
 var boom = helper.error;
 var gearmanode = require('gearmanode');
 
+var Province = require ("../../resources/misc/schemas/province");
+var KabKota = require ("../../resources/misc/schemas/kabkota");
+
 var ResourceUser = require ("../../resources/user");
 var Model = ResourceUser.schemas;
 var ResourceQueue = require ("../../resources/commandQueue");
@@ -177,6 +180,16 @@ User.prototype.search = function (query, ctx, options, cb) {
     var task = Model.User.find(query, omit);
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
+    task.populate({
+      path: "profile.organizationInfo.province", 
+      select: "name",
+      model: "Province"
+    });
+    task.populate({
+      path: "profile.organizationInfo.kabKota", 
+      select: "name",
+      model: "KabKota"
+    });
     var paths = Model.User.schema.paths;
     var keys = Object.keys(paths);
 
@@ -556,7 +569,7 @@ User.prototype.suggest = function(ctx, options, cb) {
         { username: candidate },
         {
           username: {
-            $regex: "^" + candidate + ".[0-9]+$"  
+            $regex: "^" + candidate + "\\.[0-9]+$"  
           }
         },
       ],
@@ -564,6 +577,21 @@ User.prototype.suggest = function(ctx, options, cb) {
     }, "username");
     query.sort({username:1});
     query.exec(function(err, result) {
+
+      var f = function(a, b) {
+        if (a && b && a.username && b.username) {
+          var a_i = a.username.lastIndexOf(".");
+          var b_i = b.username.lastIndexOf(".");
+          if (a_i > 0 && b_i > 0) {
+            a_num = a.username.substr(a_i + 1);
+            b_num = b.username.substr(b_i + 1);
+            return (a_i - b_i);
+          }
+        }
+        return 0;
+      };
+      result.sort(f);
+      console.log(result);
       if (err) {
         return cb(err);
       }

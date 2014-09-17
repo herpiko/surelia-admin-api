@@ -25,8 +25,9 @@ module.exports = function(options){
   app.use(mount);
 
   var user = require ("./resources/user/public")(options);
+  var misc = require ("./resources/misc/public")(options);
   var page = require ("./resources/pages/public")(options);
-  app.statics = [user, page];
+  app.statics = [user, misc, page];
 
   return app;
 }
