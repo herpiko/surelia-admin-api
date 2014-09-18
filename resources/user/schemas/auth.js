@@ -53,6 +53,7 @@ function auth (schema, options) {
     query.domain = domain;
     var t = this.findOne(query);
     t.populate("group", "_id name");
+    t.populate("domain", "_id name");
     t.exec(function (err, model) {
 
       if (err) return next(err)

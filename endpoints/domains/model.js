@@ -37,7 +37,7 @@ Domain.prototype.find = function(ctx, options, cb) {
       session.user &&
       session.user.group) {
         // Local admin
-    query["_id"] = session.user.domain;
+    query["_id"] = session.user.domain._id;
   }
 
   this.search (query, ctx, options, cb);
