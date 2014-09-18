@@ -315,7 +315,7 @@ User.prototype.create = function (ctx, options, cb) {
 
       if (group) {
         body.group = group;
-        body.domain = ctx.session.user.domain;
+        body.domain = ctx.session.user.domain._id;
       }
 
       Model.User.register (body, function (err, data){
