@@ -115,6 +115,7 @@ function auth (schema, options) {
   // the new instance into the callback if no errors were found
   schema.static("register", function (attr, next) {
     var self = this;
+
     this.create(attr, function (err, model) {
       if (err) {
         if (/duplicate key/.test(err)) {

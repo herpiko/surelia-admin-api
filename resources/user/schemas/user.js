@@ -16,6 +16,7 @@ var Acl = enums.Acl;
 var Roles = enums.Roles;
 var States = enums.States;
 
+var ObjectId = mongoose.Types.ObjectId; 
 
 /**
  * Shorthands
@@ -27,7 +28,7 @@ var Schema = mongoose.Schema;
  */
 var UserLogSchema = new Schema({
   date : { type : Date, default : new Date()},
-  actor : { type : String, default : "system"},
+  actor: { type : Schema.Types.ObjectId, required: true}, 
   changeset : [{}]
 });
 
@@ -69,7 +70,9 @@ var UserSchema = new Schema({
   log : [{
     type : Schema.Types.ObjectId,
     ref : "UserLog"
-  }]
+  }],
+
+  creator: { type : Schema.Types.ObjectId, required: true,default: ObjectId("000000000000000000000000")}, 
 
 });
 
@@ -113,7 +116,7 @@ UserSchema.pre("save", true, function(next, done) {
 
   // build the trail
   var trail = {
-    actor : this.session,
+    actor : this.session || this.creator,
     date : new Date(),
     changeset : diff (_.omit(previous, "log"), _.omit(current, "log")) // why this property named as changeset? http://en.wikipedia.org/wiki/Changeset
   };

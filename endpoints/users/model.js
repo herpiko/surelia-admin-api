@@ -110,7 +110,7 @@ User.prototype.search = function (query, ctx, options, cb) {
 
   // expand
   var expand = qs.expand || [];
-  var omit = "-secret -hash -salt -__v -log";
+  var omit = "-secret -hash -salt -__v";
 
   // for custom operation
   var operator = qs.operator || false;
@@ -190,6 +190,21 @@ User.prototype.search = function (query, ctx, options, cb) {
       select: "name",
       model: "KabKota"
     });
+
+    if (!_.isEmpty(exact)) {
+      task.populate({
+        path: "creator", 
+        select: "profile.name",
+        model: "User"
+      });
+      task.populate({
+        path: "log",
+        select: "actor date",
+        model: "UserLog"
+      });
+    }
+
+
     var paths = Model.User.schema.paths;
     var keys = Object.keys(paths);
 
@@ -202,6 +217,15 @@ User.prototype.search = function (query, ctx, options, cb) {
     var promise = task.exec();
     promise.addErrback(cb);
     promise.then(function(retrieved){
+      if (!_.isEmpty(exact)) {
+        var LogUser = mongoose.model ("UserLog");
+        LogUser.populate(retrieved[0].log, {
+          path: "actor", 
+          select: "profile.name",
+          model: "User"
+        });
+      }
+
       Model.User.count(query, function(err, total){
 
         if (err) return cb (err);
@@ -272,6 +296,7 @@ User.prototype.create = function (ctx, options, cb) {
   var session = ctx.session;
   var group;
   if (session && session.user && session.user.group) {
+    Model.User.session = session.user._id;
     group = session.user.group._id;
   }
 
@@ -318,6 +343,7 @@ User.prototype.create = function (ctx, options, cb) {
         body.domain = ctx.session.user.domain._id;
       }
 
+      body.creator = ctx.session.user._id;
       Model.User.register (body, function (err, data){
 
         if (err) {
@@ -363,6 +389,7 @@ User.prototype.update = function (ctx, options, cb) {
     data.save(function (err, user){
 
       if (err) {
+        console.log(err);
         return cb(boom.badRequest (err.message));
       }
 
@@ -387,6 +414,7 @@ User.prototype.update = function (ctx, options, cb) {
       // boom
     }
 
+    data.session = ctx.session.user._id;
     co(function*() {
       for (var k in body) {
         if (k != "mailboxServer" && body[k]) {
