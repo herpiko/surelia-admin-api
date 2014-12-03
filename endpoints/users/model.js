@@ -387,6 +387,10 @@ User.prototype.update = function (ctx, options, cb) {
 
   var save = function(data) {
     data.save(function (err, user){
+      
+      if (!data.alias && body.alias) {
+        Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}});
+      }
 
       if (err) {
         console.log(err);
@@ -417,7 +421,7 @@ User.prototype.update = function (ctx, options, cb) {
     data.session = ctx.session.user._id;
     co(function*() {
       for (var k in body) {
-        if (k != "mailboxServer" && body[k]) {
+        if (k != "mailboxServer"  && body[k]) {
           data[k] = body[k];  
         }
       }
