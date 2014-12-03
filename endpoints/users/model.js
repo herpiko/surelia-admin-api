@@ -270,7 +270,7 @@ User.prototype.findOne = function (ctx, options, cb) {
       Model.User.findOne(query, next);
     }
   }
-
+  
   co(function*() {
     if (query.domain && !(ObjectId.isValid(query.domain) && typeof(query.domain) === "object")) {
       var domain = yield self.findDomainId(query.domain);
@@ -384,25 +384,17 @@ User.prototype.update = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
   var id = ctx.params.id;
-
-  var save = function(data) {
-    data.save(function (err, user){
-
-      if (err) {
-        console.log(err);
-        return cb(boom.badRequest (err.message));
-      }
-
-      var object = {
-        object : "user",
-      }
-
-      var omit = ["hash", "log"];
-      object = _.merge(object, user.toJSON());
-      object = _.omit (object, omit);
-      return cb (null, object);
-
-    });
+  
+  var createTransaction = function(next) {
+     QueueModel.create({
+       command: QueueCommands.types.UPDATE,
+       args: {
+        method : "updateAlias",
+        data : body.alias
+       },
+       state: QueueStates.types.NEW,
+       createdDate: new Date
+     }, next); 
   }
 
   Model.User.findById(id, function(err, data){
@@ -412,6 +404,55 @@ User.prototype.update = function (ctx, options, cb) {
 
     if (!data) {
       // boom
+    }
+    var save = function(err, result) {
+      if (err) {
+        return cb(err);
+      }
+      data.save(function (err, user){
+        
+        if (err) {
+          console.log(err);
+          return cb(boom.badRequest (err.message));
+        }
+  
+        var object = {
+          object : "user",
+        }
+  
+        var omit = ["hash", "log"];
+        object = _.merge(object, user.toJSON());
+        object = _.omit (object, omit);
+        var message = {
+          method : "updateAlias",
+          data : body.alias
+        };
+        var client = gearmanode.client({servers: self.options.gearmand});
+        var job = client.submitJob("updateAlias", message);
+        
+        if (!data.alias && body.alias) {
+          Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+            job.on("complete", function() {
+              console.log('RESULT: ' + job.response);
+              cb(null, JSON.parse(job.response));
+              client.close();
+            });
+            return cb (null, object);
+          });
+        } else if (data.alias && !body.alias) {
+          Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
+            job.on("complete", function() {
+              console.log('RESULT: ' + job.response);
+              cb(null, JSON.parse(job.response));
+              client.close();
+            });
+            return cb (null, object);
+          });
+        } else {
+          return cb (null, object);
+        }
+  
+      });
     }
 
     data.session = ctx.session.user._id;
@@ -433,10 +474,10 @@ User.prototype.update = function (ctx, options, cb) {
 
       if (body.password) {
         data.setPassword(body.password, function() {
-          save(data);
+          createTransaction(save);
         });
       } else {
-        save(data);
+          createTransaction(save);
       }
     })();
   });
