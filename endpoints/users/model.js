@@ -387,7 +387,7 @@ User.prototype.update = function (ctx, options, cb) {
 
   var save = function(data) {
     data.save(function (err, user){
-
+      
       if (err) {
         console.log(err);
         return cb(boom.badRequest (err.message));
@@ -400,7 +400,14 @@ User.prototype.update = function (ctx, options, cb) {
       var omit = ["hash", "log"];
       object = _.merge(object, user.toJSON());
       object = _.omit (object, omit);
-      return cb (null, object);
+      
+      if (!data.alias && body.alias) {
+        Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+          return cb (null, object);
+        });
+      } else {
+        return cb (null, object);
+      }
 
     });
   }
