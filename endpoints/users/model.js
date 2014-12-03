@@ -387,10 +387,14 @@ User.prototype.update = function (ctx, options, cb) {
 
   var save = function(data) {
     data.save(function (err, user){
-
+      
       if (err) {
         console.log(err);
         return cb(boom.badRequest (err.message));
+      }  else {
+        if (!data.alias && body.alias) {
+          Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}});
+        }
       }
 
       var object = {

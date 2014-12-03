@@ -56,6 +56,7 @@ var UserSchema = new Schema({
   domain: { type : Schema.Types.ObjectId, ref : "Domain", required: true}, 
   created : { type : Date },
   modified : { type : Date },
+  alias : { type : String },
   quota : { type : Number },
   secret : { type : String },
   secretExpireDate : { type : Date },
