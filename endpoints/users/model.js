@@ -270,7 +270,7 @@ User.prototype.findOne = function (ctx, options, cb) {
       Model.User.findOne(query, next);
     }
   }
-
+  
   co(function*() {
     if (query.domain && !(ObjectId.isValid(query.domain) && typeof(query.domain) === "object")) {
       var domain = yield self.findDomainId(query.domain);
@@ -384,25 +384,21 @@ User.prototype.update = function (ctx, options, cb) {
   var self = this;
   var body = options.body;
   var id = ctx.params.id;
-
-  var save = function(data) {
-    data.save(function (err, user){
-
-      if (err) {
-        console.log(err);
-        return cb(boom.badRequest (err.message));
-      }
-
-      var object = {
-        object : "user",
-      }
-
-      var omit = ["hash", "log"];
-      object = _.merge(object, user.toJSON());
-      object = _.omit (object, omit);
-      return cb (null, object);
-
-    });
+  
+  var args = {
+    method : "updateAlias",
+    data : {
+      alias : body.alias,
+      source : body.username
+    }
+  };
+  var createTransaction = function(next) {
+     QueueModel.create({
+       command: QueueCommands.types.UPDATE,
+       args: args,
+       state: QueueStates.types.NEW,
+       createdDate: new Date
+     }, next); 
   }
 
   Model.User.findById(id, function(err, data){
@@ -412,6 +408,80 @@ User.prototype.update = function (ctx, options, cb) {
 
     if (!data) {
       // boom
+    }
+    var save = function(err, result) {
+    console.log(JSON.stringify(body));
+      if (err) {
+        return cb(err);
+      }
+      data.save(function (err, user){
+        
+        if (err) {
+          console.log(err);
+          return cb(boom.badRequest (err.message));
+        }
+  
+        var object = {
+          object : "user",
+        }
+  
+        var omit = ["hash", "log"];
+        object = _.merge(object, user.toJSON());
+        object = _.omit (object, omit);
+        
+        var closeTransaction = function(args,cb) {
+          QueueModel.findOne({
+            "args.data.alias" : args.data.alias
+          }, function(err, entry) {
+            console.log(JSON.stringify(entry));
+            if (entry) {
+              entry.doneDate = new Date();
+              entry.state = "finished";
+              //entry.output = "";
+              entry.save(cb); 
+            } else {
+              cb();
+            }
+          });
+        }
+        
+        var newJob = function(alias,source) {
+          var message = {
+            method : "updateAlias",
+            data : {
+              alias : alias,
+              source : source
+            }
+          };
+          var buf = new Buffer(JSON.stringify(message));
+          var client = gearmanode.client({servers: self.options.gearmand});
+          var job = client.submitJob("updateAlias", buf);
+          job.on("complete", function() {
+            console.log('RESULT: ' + job.response);
+            closeTransaction(args,function() {
+              cb(null, JSON.parse(job.response)); 
+            });
+            client.close();
+          });
+        }
+        
+        if (body.alias) {
+          Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+            DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
+              newJob(body.alias,data.username+"@"+result.name);
+              return cb (null, object);
+            });
+          });
+        } else if (data.alias && !body.alias) {
+          Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
+            newJob(data.alias,false);
+            return cb (null, object);
+          });
+        } else {
+          return cb (null, object);
+        }
+  
+      });
     }
 
     data.session = ctx.session.user._id;
@@ -433,10 +503,10 @@ User.prototype.update = function (ctx, options, cb) {
 
       if (body.password) {
         data.setPassword(body.password, function() {
-          save(data);
+          createTransaction(save);
         });
       } else {
-        save(data);
+          createTransaction(save);
       }
     })();
   });
