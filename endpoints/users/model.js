@@ -385,13 +385,17 @@ User.prototype.update = function (ctx, options, cb) {
   var body = options.body;
   var id = ctx.params.id;
   
+  var args = {
+    method : "updateAlias",
+    data : {
+      alias : body.alias,
+      source : body.username
+    }
+  };
   var createTransaction = function(next) {
      QueueModel.create({
        command: QueueCommands.types.UPDATE,
-       args: {
-        method : "updateAlias",
-        data : body.alias
-       },
+       args: args,
        state: QueueStates.types.NEW,
        createdDate: new Date
      }, next); 
@@ -406,6 +410,7 @@ User.prototype.update = function (ctx, options, cb) {
       // boom
     }
     var save = function(err, result) {
+    console.log(JSON.stringify(body));
       if (err) {
         return cb(err);
       }
@@ -424,43 +429,56 @@ User.prototype.update = function (ctx, options, cb) {
         object = _.merge(object, user.toJSON());
         object = _.omit (object, omit);
         
-        if (!data.alias && body.alias) {
+        /*
+        var closeTransaction = function(args,cb) {
+          QueueModel.findOne({
+            "args.data.alias" : args.data.alias
+          }, function(entry) {
+            console.log(JSON.stringify(entry));
+            if (entry) {
+              entry.doneDate = new Date();
+              entry.state = "finished";
+              //output = "";
+              entry.save(cb); 
+            } else {
+              cb();
+            }
+          });
+        }
+        */
+
+        var newJob = function(alias,source) {
+          var message = {
+            method : "updateAlias",
+            data : {
+              alias : alias,
+              source : source
+            }
+          };
+          var buf = new Buffer(JSON.stringify(message));
+          var client = gearmanode.client({servers: self.options.gearmand});
+          var job = client.submitJob("updateAlias", buf);
+          job.on("complete", function() {
+            console.log('RESULT: ' + job.response);
+            //closeTransaction(args,function() {
+              cb(null, JSON.parse(job.response)); 
+              console.log("hasil job "+job.response);
+            //});
+            client.close();
+          });
+        }
+        
+        if (body.alias) {
           Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
-            var message = {
-              method : "updateAlias",
-              data : {
-                alias : body.alias,
-                source : body.username 
-              }
-            };
-            var buf = new Buffer(JSON.stringify(message));
-            var client = gearmanode.client({servers: self.options.gearmand});
-            var job = client.submitJob("updateAlias", buf);
-            job.on("complete", function() {
-              console.log('RESULT: ' + job.response);
-              cb(null, JSON.parse(job.response));
-              client.close();
-            });
-            return cb (null, object);
+            //Domain.Model.findOne({_id:ObjectId(data.domain)}, function(r) {
+              //newJob(body.alias,data.username+"@"+r.name);
+              newJob(body.alias,data.username+"@jakarta.go.id");
+              return cb (null, object);
+            //});
           });
         } else if (data.alias && !body.alias) {
           Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
-            var message = {
-              method : "updateAlias",
-              data : {
-                // Without source means deletions
-                // While new alias is empty, we are using existing alias to perform deletions
-                alias : data.alias,
-              }
-            };
-            var buf = new Buffer(JSON.stringify(message));
-            var client = gearmanode.client({servers: self.options.gearmand});
-            var job = client.submitJob("updateAlias", buf);
-            job.on("complete", function() {
-              console.log('RESULT: ' + job.response);
-              cb(null, JSON.parse(job.response));
-              client.close();
-            });
+            newJob(data.alias,false);
             return cb (null, object);
           });
         } else {
