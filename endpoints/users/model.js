@@ -423,15 +423,19 @@ User.prototype.update = function (ctx, options, cb) {
         var omit = ["hash", "log"];
         object = _.merge(object, user.toJSON());
         object = _.omit (object, omit);
-        var message = {
-          method : "updateAlias",
-          data : body.alias
-        };
-        var client = gearmanode.client({servers: self.options.gearmand});
-        var job = client.submitJob("updateAlias", message);
         
         if (!data.alias && body.alias) {
           Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+            var message = {
+              method : "updateAlias",
+              data : {
+                alias : body.alias,
+                source : body.username 
+              }
+            };
+            var buf = new Buffer(JSON.stringify(message));
+            var client = gearmanode.client({servers: self.options.gearmand});
+            var job = client.submitJob("updateAlias", buf);
             job.on("complete", function() {
               console.log('RESULT: ' + job.response);
               cb(null, JSON.parse(job.response));
@@ -441,6 +445,17 @@ User.prototype.update = function (ctx, options, cb) {
           });
         } else if (data.alias && !body.alias) {
           Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
+            var message = {
+              method : "updateAlias",
+              data : {
+                // Without source means deletions
+                // While new alias is empty, we are using existing alias to perform deletions
+                alias : data.alias,
+              }
+            };
+            var buf = new Buffer(JSON.stringify(message));
+            var client = gearmanode.client({servers: self.options.gearmand});
+            var job = client.submitJob("updateAlias", buf);
             job.on("complete", function() {
               console.log('RESULT: ' + job.response);
               cb(null, JSON.parse(job.response));
