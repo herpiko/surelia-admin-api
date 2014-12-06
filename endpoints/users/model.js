@@ -386,11 +386,11 @@ User.prototype.update = function (ctx, options, cb) {
   var id = ctx.params.id;
   
   var createTransaction = function(next) {
-     QueueModel.create({
+     QueueModel.update({
        command: QueueCommands.types.UPDATE,
        args: {
         method : "updateAlias",
-        data : "alamat@pnsmail.go.id"
+        data : body.alias
        },
        state: QueueStates.types.NEW,
        createdDate: new Date
@@ -423,8 +423,12 @@ User.prototype.update = function (ctx, options, cb) {
         var omit = ["hash", "log"];
         object = _.merge(object, user.toJSON());
         object = _.omit (object, omit);
+        var message = {
+          method : "updateAlias",
+          data : body.alias
+        };
         var client = gearmanode.client({servers: self.options.gearmand});
-        var job = client.submitJob("updateAlias", "");
+        var job = client.submitJob("updateAlias", message);
         
         if (!data.alias && body.alias) {
           Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
