@@ -468,7 +468,7 @@ User.prototype.update = function (ctx, options, cb) {
         if (body.alias) {
           Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
             DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
-              newJob(data.username+"@"+result.name, body.alias);
+              newJob(body.source,data.username+"@"+result.name,);
               return cb (null, object);
             });
           });
