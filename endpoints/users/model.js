@@ -449,8 +449,8 @@ User.prototype.update = function (ctx, options, cb) {
           var message = {
             method : "updateAlias",
             data : {
-              alias : source,
-              source : alias
+              alias : alias,
+              source : source
             }
           };
           var buf = new Buffer(JSON.stringify(message));
@@ -468,7 +468,7 @@ User.prototype.update = function (ctx, options, cb) {
         if (body.alias) {
           Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
             DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
-              newJob(body.alias,data.username+"@"+result.name);
+              newJob(data.username+"@"+result.name, body.alias);
               return cb (null, object);
             });
           });
