@@ -449,8 +449,8 @@ User.prototype.update = function (ctx, options, cb) {
           var message = {
             method : "updateAlias",
             data : {
-              alias : alias,
-              source : source
+              alias : source,
+              source : alias
             }
           };
           var buf = new Buffer(JSON.stringify(message));
