@@ -175,7 +175,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   } else if (qs.yearCreated && qs.monthCreated) {
     var month = parseInt(qs.monthCreated)-1;
     var startDate = new Date(qs.yearCreated, month, 1, 00, 00, 01);
-    var endDate = new Date(qs.yearCreated, month, endOfMonth(qs.monthCreated, qs.yearCreated), 23, 59, 59);
+    var endDate = new Date(qs.yearCreated, month, endOfMonth(month, qs.yearCreated), 23, 59, 59);
     query["created"] = {
       $gte: startDate,
       $lt: endDate
@@ -191,7 +191,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   } else if (qs.yearModified && qs.monthModified) {
     var month = parseInt(qs.monthModified)-1;
     var startDate = new Date(qs.yearModified, month, 1, 00, 00, 01);
-    var endDate = new Date(qs.yearModified, month, endOfMonth(qs.monthModified, qs.yearModified), 23, 59, 59);
+    var endDate = new Date(qs.yearModified, month, endOfMonth(month, qs.yearModified), 23, 59, 59);
     query["modified"] = {
       $gte: startDate,
       $lt: endDate
