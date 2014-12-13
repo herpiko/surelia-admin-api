@@ -91,11 +91,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   var qs = ctx.query;
   console.log("query : "+JSON.stringify(qs));
   var self = this;
-  if (ctx.params.domain=="all") {
-    var domain = "";
-  } else {
-    var domain = ctx.params.domain;
-  }
+  var domain = ctx.params.domain;
   var session = ctx.session;
   var group;
   if (session && session.user && session.user.group) {
@@ -108,10 +104,6 @@ User.prototype.search = function (query, ctx, options, cb) {
   var sort = qs.sort || { _id : -1 };
   if (qs.oldestCreated) {
     sort = {created:1};
-    limit = 1;
-  }
-  if (qs.oldestModified) {
-    sort = {modified:1};
     limit = 1;
   }
 
@@ -171,6 +163,9 @@ User.prototype.search = function (query, ctx, options, cb) {
   if (qs.province) {
     query["profile.organizationInfo.province"] = ObjectId(qs.province);
   }
+  var endOfMonth = function(month, year) {
+    return new Date(year,month,00).getDate();
+  }
   if (qs.yearCreated && !qs.monthCreated) {
     var startDate = new Date(qs.yearCreated, 00, 1, 00, 00, 01);
     var endDate = new Date(qs.yearCreated, 11, 31, 23, 59, 59);
@@ -179,9 +174,6 @@ User.prototype.search = function (query, ctx, options, cb) {
       $lt: endDate
     };
   } else if (qs.yearCreated && qs.monthCreated) {
-    var endOfMonth = function(month, year) {
-      return new Date(year,month,00).getDate();
-    }
     var month = parseInt(qs.monthCreated)-1;
     var startDate = new Date(qs.yearCreated, month, 1, 00, 00, 01);
     var endDate = new Date(qs.yearCreated, month, endOfMonth(qs.monthCreated, qs.yearCreated), 23, 59, 59);
@@ -198,9 +190,6 @@ User.prototype.search = function (query, ctx, options, cb) {
       $lt: endDate
     };
   } else if (qs.yearModified && qs.monthModified) {
-    var endOfMonth = function(month, year) {
-      return new Date(year,month,00).getDate();
-    }
     var month = parseInt(qs.monthModified)-1;
     var startDate = new Date(qs.yearModified, month, 1, 00, 00, 01);
     var endDate = new Date(qs.yearModified, month, endOfMonth(qs.monthModified, qs.yearModified), 23, 59, 59);
