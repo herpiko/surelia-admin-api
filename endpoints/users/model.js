@@ -86,7 +86,6 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
 
   this.search (query, ctx, options, cb);
 }
-
 User.prototype.search = function (query, ctx, options, cb) {
 
   var qs = ctx.query;
@@ -102,6 +101,10 @@ User.prototype.search = function (query, ctx, options, cb) {
   var skip = qs.skip || 0;
   var limit = qs.limit || LIMIT;
   var sort = qs.sort || { _id : -1 };
+  if (qs.oldestCreated) {
+    sort = {created:1};
+    limit = 1;
+  }
 
   // like or exact
   var like = qs.like || {};
@@ -151,6 +154,48 @@ User.prototype.search = function (query, ctx, options, cb) {
 
   if (options.and) {
     query = { $and : [ query, options.and ]};
+  }
+  // for count report
+  if (qs.kabKota) {
+    query["profile.organizationInfo.kabKota"] = ObjectId(qs.kabKota);
+  }
+  if (qs.province) {
+    query["profile.organizationInfo.province"] = ObjectId(qs.province);
+  }
+  var endOfMonth = function(month, year) {
+    return new Date(year,month,00).getDate();
+  }
+  if (qs.yearCreated && !qs.monthCreated) {
+    var startDate = new Date(qs.yearCreated, 00, 1, 00, 00, 01);
+    var endDate = new Date(qs.yearCreated, 11, 31, 23, 59, 59);
+    query["created"] = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  } else if (qs.yearCreated && qs.monthCreated) {
+    var month = parseInt(qs.monthCreated)-1;
+    var startDate = new Date(qs.yearCreated, month, 1, 00, 00, 01);
+    var endDate = new Date(qs.yearCreated, month, endOfMonth(qs.monthCreated, qs.yearCreated), 23, 59, 59);
+    query["created"] = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  }
+  if (qs.yearModified && !qs.monthModified) {
+    var startDate = new Date(qs.yearModified, 00, 1, 00, 00, 01);
+    var endDate = new Date(qs.yearModified, 11, 31, 23, 59, 59);
+    query["modified"] = {
+      $gte: startDate,
+      $lt: endDate
+    };
+  } else if (qs.yearModified && qs.monthModified) {
+    var month = parseInt(qs.monthModified)-1;
+    var startDate = new Date(qs.yearModified, month, 1, 00, 00, 01);
+    var endDate = new Date(qs.yearModified, month, endOfMonth(qs.monthModified, qs.yearModified), 23, 59, 59);
+    query["modified"] = {
+      $gte: startDate,
+      $lt: endDate
+    };
   }
 
   co(function*() {
@@ -215,31 +260,38 @@ User.prototype.search = function (query, ctx, options, cb) {
     task.sort({ lastUpdated : -1});
 
     var promise = task.exec();
-    promise.addErrback(cb);
-    promise.then(function(retrieved){
-      if (!_.isEmpty(exact)) {
-        var LogUser = mongoose.model ("UserLog");
-        LogUser.populate(retrieved[0].log, {
-          path: "actor", 
-          select: "profile.name",
-          model: "User"
-        });
-      }
-
+    if (qs.count) {
       Model.User.count(query, function(err, total){
-
         if (err) return cb (err);
-
         var obj = {
-          object : "list",
           total : total,
-          count : retrieved.length,
-          data : retrieved
         }
-
         cb (null, obj);
       });
-    });
+    } else {
+      promise.addErrback(cb);
+      promise.then(function(retrieved){
+        if (!_.isEmpty(exact)) {
+          var LogUser = mongoose.model ("UserLog");
+          LogUser.populate(retrieved[0].log, {
+            path: "actor", 
+            select: "profile.name",
+            model: "User"
+          });
+        }
+  
+        Model.User.count(query, function(err, total){
+          if (err) return cb (err);
+          var obj = {
+            object : "list",
+            total : total,
+            count : retrieved.length,
+            data : retrieved
+          }
+          cb (null, obj);
+        });
+      });
+    }
   })();
 }
 
