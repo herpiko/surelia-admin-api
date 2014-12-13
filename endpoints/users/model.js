@@ -89,7 +89,6 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
 User.prototype.search = function (query, ctx, options, cb) {
 
   var qs = ctx.query;
-  console.log("query : "+JSON.stringify(qs));
   var self = this;
   var domain = ctx.params.domain;
   var session = ctx.session;
