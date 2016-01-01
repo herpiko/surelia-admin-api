@@ -65,4 +65,16 @@ User.prototype.suggest = function * (){
   yield handle.post (this, "suggest", {});
 }
 
+User.prototype.statByClientType = function * (){
+  yield handle.get (this, "statByClientType", {});
+}
+
+User.prototype.statByProvince = function * (){
+  yield handle.get (this, "statByProvince", {});
+}
+
+User.prototype.totalUser = function * (){
+  yield handle.get (this, "totalUser", {});
+}
+
 

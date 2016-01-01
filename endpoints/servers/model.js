@@ -11,6 +11,10 @@ var ResourceServer = require ("../../resources/server");
 var Model = ResourceServer.schemas;
 var ResourceDomain = require ("../../resources/domain");
 var DomainModel = ResourceDomain.schemas;
+var df = require("freediskspace");
+var Monitor = require("monitor");
+var monitor = new Monitor({probeClass:"Process"});
+monitor.connect();
 
 var policy = require("../../policy");
 
@@ -322,6 +326,41 @@ Server.prototype.statTopRemoteFailures = function (ctx, options, cb){
     client.close();
   });
 
+};
+
+Server.prototype.serverStat = function (ctx, options, cb){
+  var stat = monitor.toJSON();
+  var obj = {
+    hostname : stat.hostname,
+    os : stat.type + " " + stat.arch + " " + stat.release,
+    uptime : stat.uptime,
+    loadAvg : stat.loadavg,
+    totalmem : stat.totalmem,
+    freemem : stat.freemem,
+    cpus : stat.cpus,
+    drives : []
+  }
+  df.driveList()
+    .then(function(drives){
+      async.eachSeries(drives, function(drive, callback){
+        df.detail(drive)
+          .then(function(detail){
+            obj.drives.push(detail);
+            callback();
+          })
+          .catch(function(err){
+            callback(err);
+          })
+      }, function(err){
+        if (err) {
+          return cb(err)
+        }
+        cb(null, obj);
+      })
+    })
+    .catch(function(err){
+      cb(err);
+    })
 };
 
 module.exports = function(options) {

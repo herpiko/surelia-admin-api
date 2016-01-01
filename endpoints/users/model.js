@@ -768,6 +768,82 @@ User.prototype.suggest = function(ctx, options, cb) {
 
 }
 
+User.prototype.statByClientType = function(ctx, options, cb) {
+  var obj = []
+  var lastMonth = new Date();
+  lastMonth.setDate(lastMonth.getDate()-30);
+  Model.User.count({
+    "accessLog.lastClientType":"webmail", 
+    "accessLog.lastActivity" : { $gt : lastMonth }
+  }, function(err, result){
+    if (err) return cb (err);
+    obj.push({type : "Webmail", total: parseInt(result)});
+    Model.User.count({
+      "accessLog.lastClientType":"imap",
+      "accessLog.lastActivity" : { $gt : lastMonth }
+    }, function(err, result){
+      if (err) return cb (err);
+      obj.push({type : "IMAP", total: parseInt(result)});
+      Model.User.count({
+        "accessLog.lastClientType":"pop3",
+        "accessLog.lastActivity" : { $gt : lastMonth }
+      }, function(err, result){
+        if (err) return cb (err);
+        obj.push({type : "POP3", total: parseInt(result)});
+        cb (null, obj)
+      });
+    });
+  });
+}
+
+User.prototype.statByProvince = function(ctx, options, cb) {
+  // Get province list
+  Province.find()
+    .sort({num:1})
+    .lean()
+    .exec(function(err, result){
+      var obj = [];
+      async.eachSeries(result, function(province, cb){
+        Model.User.count({"profile.organizationInfo.province" : province._id}, function(err, result){
+          if (err) return cb (err);
+          obj.push({name : province.name, total : parseInt(result)});
+          cb();
+        });
+      }, function(err){
+        if (err) return cb (err);
+        cb (null, obj)
+      })
+    });
+}
+
+User.prototype.statByProvince = function(ctx, options, cb) {
+  // Get province list
+  Province.find()
+    .sort({num:1})
+    .lean()
+    .exec(function(err, result){
+      var obj = [];
+      async.eachSeries(result, function(province, cb){
+        Model.User.count({"profile.organizationInfo.province" : province._id}, function(err, result){
+          if (err) return cb (err);
+          obj.push({name : province.name, total : parseInt(result)});
+          cb();
+        });
+      }, function(err){
+        if (err) return cb (err);
+        cb (null, obj)
+      })
+    });
+}
+
+User.prototype.totalUser = function(ctx, options, cb) {
+  Model.User.count({}, function(err, result){
+    if (err) return cb (err);
+    cb(null, parseInt(result));
+  });
+}
+  
+
 module.exports = function(options) {
   return thunkified (User(options));
 }

@@ -7,6 +7,9 @@ function Routes (name, mid, handle) {
 
   var router = new Router(name, mid);
 
+  // stat
+  router.GET ("/servers/stat", handle.serverStat);
+
   // servers
   router.GET ("/servers", handle.find);
   router.GET ("/servers/:id", handle.findOne);
@@ -21,6 +24,7 @@ function Routes (name, mid, handle) {
   router.PUT ("/servers/:id", handle.update);
   router.DEL ("/servers/:id", handle.remove);
   router.DEL ("/servers", handle.remove);
+
 
   return router;
 }
