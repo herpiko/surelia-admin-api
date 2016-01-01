@@ -6,7 +6,6 @@ var thunkify = require ("thunkify");
 var koa = require ("koa");
 var Router = require ("koa-router");
 var cors = require("koa-cors");
-require("monitor").start();
 
 
 module.exports = function(options){

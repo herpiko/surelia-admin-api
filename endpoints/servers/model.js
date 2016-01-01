@@ -6,15 +6,13 @@ var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
 var gearmanode = require('gearmanode');
+var exec = require('sync-exec');
 
 var ResourceServer = require ("../../resources/server");
 var Model = ResourceServer.schemas;
 var ResourceDomain = require ("../../resources/domain");
 var DomainModel = ResourceDomain.schemas;
 var df = require("freediskspace");
-var Monitor = require("monitor");
-var monitor = new Monitor({probeClass:"Process"});
-monitor.connect();
 
 var policy = require("../../policy");
 
@@ -329,15 +327,11 @@ Server.prototype.statTopRemoteFailures = function (ctx, options, cb){
 };
 
 Server.prototype.serverStat = function (ctx, options, cb){
-  var stat = monitor.toJSON();
   var obj = {
-    hostname : stat.hostname,
-    os : stat.type + " " + stat.arch + " " + stat.release,
-    uptime : stat.uptime,
-    loadAvg : stat.loadavg,
-    totalmem : stat.totalmem,
-    freemem : stat.freemem,
-    cpus : stat.cpus,
+    cpuUsage : exec("grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'").stdout.replace("\n",""),
+    totalmem : exec("free -h | awk '/Mem:/ { print $2 }'").stdout.replace("\n",""),
+    usedmem : exec("free -h | awk '/Mem:/ { print $3 }'").stdout.replace("\n",""),
+    freemem : exec("free -h | awk '/Mem:/ { print $4 }'").stdout.replace("\n",""),
     drives : []
   }
   df.driveList()
