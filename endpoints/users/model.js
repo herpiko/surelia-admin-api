@@ -87,7 +87,6 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
   this.search (query, ctx, options, cb);
 }
 User.prototype.search = function (query, ctx, options, cb) {
-
   var qs = ctx.query;
   var self = this;
   var domain = ctx.params.domain;
@@ -96,7 +95,6 @@ User.prototype.search = function (query, ctx, options, cb) {
   if (session && session.user && session.user.group) {
     group = session.user.group._id;
   }
-
   // skip, limit, sort
   var skip = qs.skip || 0;
   var limit = qs.limit || LIMIT;
@@ -149,17 +147,16 @@ User.prototype.search = function (query, ctx, options, cb) {
       criterias.push(obj);
     });
     query["$" + operator] = criterias;
-    console.log(query);
   }
 
   if (options.and) {
     query = { $and : [ query, options.and ]};
   }
   // for count report
-  if (qs.kabKota) {
+  if (qs.kabKota && qs.kabKota !== "All") {
     query["profile.organizationInfo.kabKota"] = ObjectId(qs.kabKota);
   }
-  if (qs.province) {
+  if (qs.province && qs.province !== "All") {
     query["profile.organizationInfo.province"] = ObjectId(qs.province);
   }
   var endOfMonth = function(month, year) {
@@ -197,6 +194,12 @@ User.prototype.search = function (query, ctx, options, cb) {
       $lt: endDate
     };
   }
+  
+  if (qs.status === "active") {
+    query["state"] = UserStates.types.ACTIVE
+  } else if (qs.status === "inactive") {
+    query["state"] = UserStates.types.INACTIVE
+  }
 
   co(function*() {
     if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
@@ -222,6 +225,7 @@ User.prototype.search = function (query, ctx, options, cb) {
       }
     }
 
+    console.log(query);
     var task = Model.User.find(query, omit);
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
