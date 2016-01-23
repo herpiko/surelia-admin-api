@@ -195,6 +195,25 @@ User.prototype.search = function (query, ctx, options, cb) {
     };
   }
   
+  if (qs["created-date-start"] || qs["created-date-end"]){
+    query["created"] = {}
+    if (qs["created-date-start"]) {
+      query["created"]["$gte"] = new Date(qs["created-date-start"]);
+    }
+    if (qs["created-date-end"]) {
+      query["created"]["$lt"] = new Date(qs["created-date-end"]);
+    }
+  }
+  if (qs["modified-date-start"] || qs["modified-date-end"]){
+    query["lastUpdated"] = {}
+    if (qs["modified-date-start"]) {
+      query["lastUpdated"]["$gte"] = new Date(qs["modified-date-start"]);
+    }
+    if (qs["modified-date-end"]) {
+      query["lastUpdated"]["$lt"] = new Date(qs["modified-date-end"]);
+    }
+  }
+
   if (qs.status === "active") {
     query["state"] = UserStates.types.ACTIVE
   } else if (qs.status === "inactive") {
