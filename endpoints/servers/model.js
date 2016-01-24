@@ -6,11 +6,13 @@ var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
 var gearmanode = require('gearmanode');
+var exec = require('sync-exec');
 
 var ResourceServer = require ("../../resources/server");
 var Model = ResourceServer.schemas;
 var ResourceDomain = require ("../../resources/domain");
 var DomainModel = ResourceDomain.schemas;
+var df = require("freediskspace");
 
 var policy = require("../../policy");
 
@@ -322,6 +324,37 @@ Server.prototype.statTopRemoteFailures = function (ctx, options, cb){
     client.close();
   });
 
+};
+
+Server.prototype.serverStat = function (ctx, options, cb){
+  var obj = {
+    cpuUsage : exec("grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'").stdout.replace("\n",""),
+    totalmem : exec("free -h | awk '/Mem:/ { print $2 }'").stdout.replace("\n",""),
+    usedmem : exec("free -h | awk '/Mem:/ { print $3 }'").stdout.replace("\n",""),
+    freemem : exec("free -h | awk '/Mem:/ { print $4 }'").stdout.replace("\n",""),
+    drives : []
+  }
+  df.driveList()
+    .then(function(drives){
+      async.eachSeries(drives, function(drive, callback){
+        df.detail(drive)
+          .then(function(detail){
+            obj.drives.push(detail);
+            callback();
+          })
+          .catch(function(err){
+            callback(err);
+          })
+      }, function(err){
+        if (err) {
+          return cb(err)
+        }
+        cb(null, obj);
+      })
+    })
+    .catch(function(err){
+      cb(err);
+    })
 };
 
 module.exports = function(options) {

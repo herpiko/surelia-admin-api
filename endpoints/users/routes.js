@@ -6,6 +6,7 @@ module.exports = Routes;
 function Routes (name, mid, handle) {
 
   var router = new Router(name, mid);
+  
 
   // users
   router.GET ("/users/:domain", handle.find);
@@ -24,7 +25,14 @@ function Routes (name, mid, handle) {
   router.GET ("/account", handle.account);
   router.POST ("/account/login", handle.authenticate);
   router.GET ("/account/activate/:secret", handle.activate);
+  
+  // stat
+  router.GET ("/stat-by-client-type", handle.statByClientType);
+  router.GET ("/stat-by-province", handle.statByProvince);
+  router.GET ("/stat-total-user", handle.totalUser);
+
 
   // return the router;
+
   return router;
 }

@@ -21,6 +21,7 @@
     "deep-diff": "^0.1.7",
     "filter": "^0.1.1",
     "finished": "^1.2.1",
+    "freediskspace": "^0.1.2",
     "gearman": "^1.0.0",
     "gearmanode": "^0.1.7",
     "kasta": "0.0.1",
@@ -40,6 +41,7 @@
     "request": "^2.37.0",
     "serializer": "0.0.3",
     "simplesmtp": "^0.3.32",
+    "sync-exec": "^0.6.2",
     "thunkify": "^2.1.2",
     "uuid": "^1.4.1"
   },

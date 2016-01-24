@@ -87,7 +87,6 @@ User.prototype.findPendingTransaction = function(ctx, options, cb) {
   this.search (query, ctx, options, cb);
 }
 User.prototype.search = function (query, ctx, options, cb) {
-
   var qs = ctx.query;
   var self = this;
   var domain = ctx.params.domain;
@@ -96,7 +95,6 @@ User.prototype.search = function (query, ctx, options, cb) {
   if (session && session.user && session.user.group) {
     group = session.user.group._id;
   }
-
   // skip, limit, sort
   var skip = qs.skip || 0;
   var limit = qs.limit || LIMIT;
@@ -149,17 +147,16 @@ User.prototype.search = function (query, ctx, options, cb) {
       criterias.push(obj);
     });
     query["$" + operator] = criterias;
-    console.log(query);
   }
 
   if (options.and) {
     query = { $and : [ query, options.and ]};
   }
   // for count report
-  if (qs.kabKota) {
+  if (qs.kabKota && qs.kabKota !== "All") {
     query["profile.organizationInfo.kabKota"] = ObjectId(qs.kabKota);
   }
-  if (qs.province) {
+  if (qs.province && qs.province !== "All") {
     query["profile.organizationInfo.province"] = ObjectId(qs.province);
   }
   var endOfMonth = function(month, year) {
@@ -197,6 +194,31 @@ User.prototype.search = function (query, ctx, options, cb) {
       $lt: endDate
     };
   }
+  
+  if (qs["created-date-start"] || qs["created-date-end"]){
+    query["created"] = {}
+    if (qs["created-date-start"]) {
+      query["created"]["$gte"] = new Date(qs["created-date-start"]);
+    }
+    if (qs["created-date-end"]) {
+      query["created"]["$lt"] = new Date(qs["created-date-end"]);
+    }
+  }
+  if (qs["modified-date-start"] || qs["modified-date-end"]){
+    query["lastUpdated"] = {}
+    if (qs["modified-date-start"]) {
+      query["lastUpdated"]["$gte"] = new Date(qs["modified-date-start"]);
+    }
+    if (qs["modified-date-end"]) {
+      query["lastUpdated"]["$lt"] = new Date(qs["modified-date-end"]);
+    }
+  }
+
+  if (qs.status === "active") {
+    query["state"] = UserStates.types.ACTIVE
+  } else if (qs.status === "inactive") {
+    query["state"] = UserStates.types.INACTIVE
+  }
 
   co(function*() {
     if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
@@ -222,6 +244,7 @@ User.prototype.search = function (query, ctx, options, cb) {
       }
     }
 
+    console.log(query);
     var task = Model.User.find(query, omit);
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
@@ -767,6 +790,82 @@ User.prototype.suggest = function(ctx, options, cb) {
   })();
 
 }
+
+User.prototype.statByClientType = function(ctx, options, cb) {
+  var obj = []
+  var lastMonth = new Date();
+  lastMonth.setDate(lastMonth.getDate()-30);
+  Model.User.count({
+    "accessLog.lastClientType":"webmail", 
+    "accessLog.lastActivity" : { $gt : lastMonth }
+  }, function(err, result){
+    if (err) return cb (err);
+    obj.push({type : "Webmail", total: parseInt(result)});
+    Model.User.count({
+      "accessLog.lastClientType":"imap",
+      "accessLog.lastActivity" : { $gt : lastMonth }
+    }, function(err, result){
+      if (err) return cb (err);
+      obj.push({type : "IMAP", total: parseInt(result)});
+      Model.User.count({
+        "accessLog.lastClientType":"pop3",
+        "accessLog.lastActivity" : { $gt : lastMonth }
+      }, function(err, result){
+        if (err) return cb (err);
+        obj.push({type : "POP3", total: parseInt(result)});
+        cb (null, obj)
+      });
+    });
+  });
+}
+
+User.prototype.statByProvince = function(ctx, options, cb) {
+  // Get province list
+  Province.find()
+    .sort({num:1})
+    .lean()
+    .exec(function(err, result){
+      var obj = [];
+      async.eachSeries(result, function(province, cb){
+        Model.User.count({"profile.organizationInfo.province" : province._id}, function(err, result){
+          if (err) return cb (err);
+          obj.push({name : province.name, total : parseInt(result)});
+          cb();
+        });
+      }, function(err){
+        if (err) return cb (err);
+        cb (null, obj)
+      })
+    });
+}
+
+User.prototype.statByProvince = function(ctx, options, cb) {
+  // Get province list
+  Province.find()
+    .sort({num:1})
+    .lean()
+    .exec(function(err, result){
+      var obj = [];
+      async.eachSeries(result, function(province, cb){
+        Model.User.count({"profile.organizationInfo.province" : province._id}, function(err, result){
+          if (err) return cb (err);
+          obj.push({name : province.name, total : parseInt(result)});
+          cb();
+        });
+      }, function(err){
+        if (err) return cb (err);
+        cb (null, obj)
+      })
+    });
+}
+
+User.prototype.totalUser = function(ctx, options, cb) {
+  Model.User.count({}, function(err, result){
+    if (err) return cb (err);
+    cb(null, parseInt(result));
+  });
+}
+  
 
 module.exports = function(options) {
   return thunkified (User(options));

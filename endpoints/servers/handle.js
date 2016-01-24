@@ -53,4 +53,8 @@ Server.prototype.statTopRemoteFailures = function * (){
   yield handle.get (this, "statTopRemoteFailures", {});
 }
 
+Server.prototype.serverStat = function * (){
+  yield handle.get (this, "serverStat", {});
+}
+
 
