@@ -30,6 +30,7 @@ function Routes (name, mid, handle) {
   router.GET ("/stat-by-client-type", handle.statByClientType);
   router.GET ("/stat-by-province", handle.statByProvince);
   router.GET ("/stat-total-user", handle.totalUser);
+  router.GET ("/stat-total-org", handle.totalOrg);
 
 
   // return the router;

@@ -865,6 +865,20 @@ User.prototype.totalUser = function(ctx, options, cb) {
     cb(null, parseInt(result));
   });
 }
+
+User.prototype.totalOrg = function(ctx, options, cb) {
+  Model.User.aggregate([
+    {
+      $match : {}
+    },
+    {
+      $group : { _id : "$profile.organization" }
+    }
+  ], function(err, result){
+    if (err) return cb (err);
+    cb(null, result.length);
+  });
+}
   
 
 module.exports = function(options) {
