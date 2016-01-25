@@ -77,4 +77,8 @@ User.prototype.totalUser = function * (){
   yield handle.get (this, "totalUser", {});
 }
 
+User.prototype.totalOrg = function * (){
+  yield handle.get (this, "totalOrg", {});
+}
+
 
