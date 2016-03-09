@@ -6,6 +6,7 @@ var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
 var gearmanode = require('gearmanode');
+var extend = require('util')._extend;
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
@@ -219,6 +220,10 @@ User.prototype.search = function (query, ctx, options, cb) {
   } else if (qs.status === "inactive") {
     query["state"] = UserStates.types.INACTIVE
   }
+  
+  if (qs.in && qs.in.roles) {
+    query['roles'] = { '$in' : [qs.in.roles] }
+  }
 
   co(function*() {
     if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
@@ -243,8 +248,6 @@ User.prototype.search = function (query, ctx, options, cb) {
         query["group"] = group;
       }
     }
-
-    console.log(query);
     var task = Model.User.find(query, omit);
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
