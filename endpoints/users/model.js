@@ -281,7 +281,9 @@ User.prototype.search = function (query, ctx, options, cb) {
 
     task.skip (skip);
     task.limit (limit);
-    task.sort (sort);
+    if (!ctx.query.csv) {
+      task.sort (sort);
+    }
 
     task.sort({ lastUpdated : -1});
 
