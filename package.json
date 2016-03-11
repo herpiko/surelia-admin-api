@@ -42,7 +42,8 @@
     "simplesmtp": "^0.3.32",
     "sync-exec": "^0.6.2",
     "thunkify": "^2.1.2",
-    "uuid": "^1.4.1"
+    "uuid": "^1.4.1",
+    "to-csv": "~0.1.1"
   },
   "devDependencies": {
     "should": "~3.3.0",
