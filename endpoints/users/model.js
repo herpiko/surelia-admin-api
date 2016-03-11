@@ -7,6 +7,7 @@ var _ = require ("lodash");
 var boom = helper.error;
 var gearmanode = require('gearmanode');
 var extend = require('util')._extend;
+var csv = require('to-csv');
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
@@ -237,7 +238,6 @@ User.prototype.search = function (query, ctx, options, cb) {
           count : 0,
           data : []
         }
-
         cb (null, obj);
        }
     }
@@ -248,7 +248,7 @@ User.prototype.search = function (query, ctx, options, cb) {
         query["group"] = group;
       }
     }
-    var task = Model.User.find(query, omit);
+    var task = Model.User.find(query, omit).lean();
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
     task.populate({
@@ -305,7 +305,79 @@ User.prototype.search = function (query, ctx, options, cb) {
             model: "User"
           });
         }
-  
+        console.log(ctx.query);
+        if (ctx.query && ctx.query.csv === 'true') {
+          var getMaps = function(callback) {
+            return Model.User.find({}, {username:1}).lean().exec(function(err, users){
+              // User map
+              var userMap = {};
+              for (var i in users) {
+                userMap[users[i]._id] = users[i].username;
+              }
+              if (err) return callback (err);
+              return DomainModel.Domain.find({}, {name:1}).lean().exec(function(err, domains){
+                if (err) return callback (err);
+                // Domain map
+                var domainMap = {};
+                for (var i in domains) {
+                  domainMap[domains[i]._id] = domains[i].name;
+                }
+                return callback(null, {
+                  userMap : userMap,
+                  domainMap : domainMap
+                })
+              });
+            });
+          }
+          return getMaps(function(err, maps){
+            if (err) return cb(err);
+            for (var i in retrieved) {
+              retrieved[i].creator = maps.userMap[retrieved[i].creator];
+              retrieved[i].domain = maps.domainMap[retrieved[i].domain];
+
+              // Iterate objects, move nested object to top
+              var nestedFields = ['profile', 'group', 'mailboxServer'];
+              for (var k in nestedFields) {
+                var field = nestedFields[k]; 
+                if (retrieved[i][field]) {
+                  var keys = Object.keys(retrieved[i][field]);
+                  for (var j in keys) {
+                    if (retrieved[i][field][keys[j]] && 
+                    typeof retrieved[i][field][keys[j]] === 'object' && 
+                    keys[j] != '_id') {
+                      var keys2 = Object.keys(retrieved[i][field][keys[j]]);
+                      for (var l in keys2) {
+                        if (retrieved[i][field][keys[j]][keys2[l]] && 
+                        typeof retrieved[i][field][keys[j]][keys2[l]] === 'object' && 
+                        keys2[l] != '_id') {
+                          if (retrieved[i][field][keys[j]][keys2[l]]) {
+                            var keys3 = Object.keys(retrieved[i][field][keys[j]][keys2[l]]);
+                            for (var m in keys3) {
+                              if (keys3[m] != '_id') {
+                                retrieved[i][keys[j] + '.' + keys2[l] + '.' + keys3[m]] = retrieved[i][field][keys[j]][keys2[l]][keys3[m]];
+                              }
+                            }
+                          }
+                        } else {
+                          if (keys2[l] != '_id') {
+                            retrieved[i][keys[j] + '.' + keys2[l]] = retrieved[i][field][keys[j]][keys2[l]];
+                          }
+                        }
+                      }
+                    } else {
+                      if (keys[j] != '_id') {
+                        retrieved[i][keys[j]] = retrieved[i][field][keys[j]];
+                      }
+                    }
+                  }
+                  delete(retrieved[i][field]);
+                }
+              }
+            }
+            var result = csv(retrieved);
+            return cb(null, result);
+          })
+        }
         Model.User.count(query, function(err, total){
           if (err) return cb (err);
           var obj = {
@@ -488,7 +560,6 @@ User.prototype.update = function (ctx, options, cb) {
       // boom
     }
     var save = function(err, result) {
-    console.log(JSON.stringify(body));
       if (err) {
         return cb(err);
       }
@@ -511,7 +582,6 @@ User.prototype.update = function (ctx, options, cb) {
           QueueModel.findOne({
             "args.data.alias" : args.data.alias
           }, function(err, entry) {
-            console.log(JSON.stringify(entry));
             if (entry) {
               entry.doneDate = new Date();
               entry.state = "finished";
