@@ -5,9 +5,9 @@ var thunkified = helper.thunkified;
 var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
-var gearmanode = require('gearmanode');
-var extend = require('util')._extend;
-var csv = require('to-csv');
+var gearmanode = require("gearmanode");
+var extend = require("util")._extend;
+var csv = require("to-csv");
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
@@ -223,7 +223,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   }
   
   if (qs.in && qs.in.roles) {
-    query['roles'] = { '$in' : [qs.in.roles] }
+    query["roles"] = { "$in" : [qs.in.roles] }
   }
 
   co(function*() {
@@ -308,7 +308,7 @@ User.prototype.search = function (query, ctx, options, cb) {
           });
         }
         console.log(ctx.query);
-        if (ctx.query && ctx.query.csv === 'true') {
+        if (ctx.query && ctx.query.csv === "true") {
           var getMaps = function(callback) {
             return Model.User.find({}, {username:1}).lean().exec(function(err, users){
               // User map
@@ -338,36 +338,36 @@ User.prototype.search = function (query, ctx, options, cb) {
               retrieved[i].domain = maps.domainMap[retrieved[i].domain];
 
               // Iterate objects, move nested object to top
-              var nestedFields = ['profile', 'group', 'mailboxServer'];
+              var nestedFields = ["profile", "group", "mailboxServer"];
               for (var k in nestedFields) {
                 var field = nestedFields[k]; 
                 if (retrieved[i][field]) {
                   var keys = Object.keys(retrieved[i][field]);
                   for (var j in keys) {
                     if (retrieved[i][field][keys[j]] && 
-                    typeof retrieved[i][field][keys[j]] === 'object' && 
-                    keys[j] != '_id') {
+                    typeof retrieved[i][field][keys[j]] === "object" && 
+                    keys[j] != "_id") {
                       var keys2 = Object.keys(retrieved[i][field][keys[j]]);
                       for (var l in keys2) {
                         if (retrieved[i][field][keys[j]][keys2[l]] && 
-                        typeof retrieved[i][field][keys[j]][keys2[l]] === 'object' && 
-                        keys2[l] != '_id') {
+                        typeof retrieved[i][field][keys[j]][keys2[l]] === "object" && 
+                        keys2[l] != "_id") {
                           if (retrieved[i][field][keys[j]][keys2[l]]) {
                             var keys3 = Object.keys(retrieved[i][field][keys[j]][keys2[l]]);
                             for (var m in keys3) {
-                              if (keys3[m] != '_id') {
-                                retrieved[i][keys[j] + '.' + keys2[l] + '.' + keys3[m]] = retrieved[i][field][keys[j]][keys2[l]][keys3[m]];
+                              if (keys3[m] != "_id") {
+                                retrieved[i][keys[j] + "." + keys2[l] + "." + keys3[m]] = retrieved[i][field][keys[j]][keys2[l]][keys3[m]];
                               }
                             }
                           }
                         } else {
-                          if (keys2[l] != '_id') {
-                            retrieved[i][keys[j] + '.' + keys2[l]] = retrieved[i][field][keys[j]][keys2[l]];
+                          if (keys2[l] != "_id") {
+                            retrieved[i][keys[j] + "." + keys2[l]] = retrieved[i][field][keys[j]][keys2[l]];
                           }
                         }
                       }
                     } else {
-                      if (keys[j] != '_id') {
+                      if (keys[j] != "_id") {
                         retrieved[i][keys[j]] = retrieved[i][field][keys[j]];
                       }
                     }
@@ -517,7 +517,7 @@ User.prototype.create = function (ctx, options, cb) {
         var client = gearmanode.client({servers: self.options.gearmand});
         var job = client.submitJob("createUser", "");
         job.on("complete", function() {
-          console.log('RESULT: ' + job.response);
+          console.log("RESULT: " + job.response);
           cb(null, JSON.parse(job.response));
           client.close();
         });
@@ -607,7 +607,7 @@ User.prototype.update = function (ctx, options, cb) {
           var client = gearmanode.client({servers: self.options.gearmand});
           var job = client.submitJob("updateAlias", buf);
           job.on("complete", function() {
-            console.log('RESULT: ' + job.response);
+            console.log("RESULT: " + job.response);
             closeTransaction(args,function() {
               cb(null, JSON.parse(job.response)); 
             });
@@ -616,14 +616,14 @@ User.prototype.update = function (ctx, options, cb) {
         }
         
         if (body.alias) {
-          Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+          Model.User.update({_id:data._id}, { $set: {"alias" : body.alias}}, function(){
             DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
               newJob(body.source,data.username+"@"+result.name);
               return cb (null, object);
             });
           });
         } else if (data.alias && !body.alias) {
-          Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
+          Model.User.update({_id:data._id}, { $unset: {"alias" : data.alias}}, function(){
             newJob(data.alias,false);
             return cb (null, object);
           });
@@ -792,7 +792,7 @@ User.prototype.suggest = function(ctx, options, cb) {
   var name = options.body.name;
   var domain = ctx.params.domain;
   var trim = function(name) {
-    var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:'"\|<>/\?,'`\.]/g, "");
+    var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:""\|<>/\?,"`\.]/g, "");
     name = name.trim();
     name = name.replace(/ +/g, ".");
     name = name.toLowerCase();
