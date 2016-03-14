@@ -223,6 +223,10 @@ User.prototype.search = function (query, ctx, options, cb) {
     query["state"] = UserStates.types.INACTIVE
   }
   
+  if (qs.client) {
+    query["accessLog.lastClientType"] = qs.client;
+  }
+  
   if (qs.in && qs.in.roles) {
     query["roles"] = { "$in" : [qs.in.roles] }
   }
