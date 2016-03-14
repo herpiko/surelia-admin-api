@@ -281,6 +281,10 @@ User.prototype.search = function (query, ctx, options, cb) {
 
     task.skip (skip);
     task.limit (limit);
+
+    // sort() couldn't be executed if the result is too large
+    // Since csv option will fetch all documents in user collection,
+    // ignore sort()
     if (!ctx.query.csv) {
       task.sort (sort);
     }
@@ -307,7 +311,7 @@ User.prototype.search = function (query, ctx, options, cb) {
             model: "User"
           });
         }
-        console.log(ctx.query);
+        // If csv query in URL exists, export the data to CSV
         if (ctx.query && ctx.query.csv === "true") {
           var getMaps = function(callback) {
             return Model.User.find({}, {username:1}).lean().exec(function(err, users){
@@ -334,10 +338,16 @@ User.prototype.search = function (query, ctx, options, cb) {
           return getMaps(function(err, maps){
             if (err) return cb(err);
             for (var i in retrieved) {
+              // Instead of Object ID, assign the true value from maps.
               retrieved[i].creator = maps.userMap[retrieved[i].creator];
               retrieved[i].domain = maps.domainMap[retrieved[i].domain];
 
-              // Iterate objects, move nested object to top
+              // The user object has three levels. The iteration bellow
+              // moves the key and values to the top level, convert it to flat object. 
+              // So it will be easier for CSV lib to convert the object to CSV string.
+              // All the Object ID (_id) should be ignored because :
+              //  1. The Object ID itself is an object, could not be parsed by CSV lib
+              //  2. The key value that related to the Object ID is already here.
               var nestedFields = ["profile", "group", "mailboxServer"];
               for (var k in nestedFields) {
                 var field = nestedFields[k]; 
@@ -346,36 +356,47 @@ User.prototype.search = function (query, ctx, options, cb) {
                   for (var j in keys) {
                     if (retrieved[i][field][keys[j]] && 
                     typeof retrieved[i][field][keys[j]] === "object" && 
+                    // Ignore Object ID
                     keys[j] != "_id") {
                       var keys2 = Object.keys(retrieved[i][field][keys[j]]);
                       for (var l in keys2) {
                         if (retrieved[i][field][keys[j]][keys2[l]] && 
                         typeof retrieved[i][field][keys[j]][keys2[l]] === "object" && 
+                        // Ignore Object ID
                         keys2[l] != "_id") {
                           if (retrieved[i][field][keys[j]][keys2[l]]) {
                             var keys3 = Object.keys(retrieved[i][field][keys[j]][keys2[l]]);
                             for (var m in keys3) {
+                              // Ignore Object ID
                               if (keys3[m] != "_id") {
+                                // Moves to top level
                                 retrieved[i][keys[j] + "." + keys2[l] + "." + keys3[m]] = retrieved[i][field][keys[j]][keys2[l]][keys3[m]];
                               }
                             }
                           }
                         } else {
+                          // Ignore Object ID
                           if (keys2[l] != "_id") {
+                            // Moves to top level
                             retrieved[i][keys[j] + "." + keys2[l]] = retrieved[i][field][keys[j]][keys2[l]];
                           }
                         }
                       }
                     } else {
+                      // Ignore Object ID
                       if (keys[j] != "_id") {
+                        // Moves to top level
                         retrieved[i][keys[j]] = retrieved[i][field][keys[j]];
                       }
                     }
                   }
+                  // Delete the nested key-value
                   delete(retrieved[i][field]);
                 }
               }
             }
+            // Convert to CSV string
+            // The result should be a valid CSV
             var result = csv(retrieved);
             return cb(null, result);
           })
