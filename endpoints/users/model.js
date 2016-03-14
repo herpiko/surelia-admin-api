@@ -227,22 +227,22 @@ User.prototype.search = function (query, ctx, options, cb) {
     query["roles"] = { "$in" : [qs.in.roles] }
   }
 
-  if (qs.inactiveInMonth) {
-    if (parseInt(qs.inactiveInMonth) === 3) {
+  if (qs.inactiveInMonths) {
+    if (parseInt(qs.inactiveInMonths) === 3) {
       query["accessLog.lastActivity"] = {};
-      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth+3), "months").toString());
-      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths+3), "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
       query["accessLog.lastActivity"]["$gt"] = startDate;
       query["accessLog.lastActivity"]["$lt"] = endDate;
-    } else if (parseInt(qs.inactiveInMonth) === 6) {
+    } else if (parseInt(qs.inactiveInMonths) === 6) {
       query["accessLog.lastActivity"] = {};
-      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth+6), "months").toString());
-      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths+6), "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
       query["accessLog.lastActivity"]["$gt"] = startDate;
       query["accessLog.lastActivity"]["$lt"] = endDate;
-    } else if (parseInt(qs.inactiveInMonth) === 12) {
+    } else if (parseInt(qs.inactiveInMonths) === 12) {
       query["accessLog.lastActivity"] = {};
-      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
       query["accessLog.lastActivity"]["$lt"] = endDate;
     }
   }
