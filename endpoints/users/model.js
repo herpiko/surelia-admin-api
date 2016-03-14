@@ -8,6 +8,7 @@ var boom = helper.error;
 var gearmanode = require("gearmanode");
 var extend = require("util")._extend;
 var csv = require("to-csv");
+var moment = require("moment");
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
@@ -226,6 +227,26 @@ User.prototype.search = function (query, ctx, options, cb) {
     query["roles"] = { "$in" : [qs.in.roles] }
   }
 
+  if (qs.inactiveInMonth) {
+    if (parseInt(qs.inactiveInMonth) === 3) {
+      query["accessLog.lastActivity"] = {};
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth+3), "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      query["accessLog.lastActivity"]["$gt"] = startDate;
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    } else if (parseInt(qs.inactiveInMonth) === 6) {
+      query["accessLog.lastActivity"] = {};
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth+6), "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      query["accessLog.lastActivity"]["$gt"] = startDate;
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    } else if (parseInt(qs.inactiveInMonth) === 12) {
+      query["accessLog.lastActivity"] = {};
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonth), "months").toString());
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    }
+  }
+
   co(function*() {
     if (!(ObjectId.isValid(domain) && typeof(domain) === "object")) {
       domain = yield self.findDomainId(domain);
@@ -248,6 +269,7 @@ User.prototype.search = function (query, ctx, options, cb) {
         query["group"] = group;
       }
     }
+    console.log(query);
     var task = Model.User.find(query, omit).lean();
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
