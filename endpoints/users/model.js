@@ -101,7 +101,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   // skip, limit, sort
   var skip = qs.skip || 0;
   var limit = qs.limit || LIMIT;
-  var sort = qs.sort || { _id : -1 };
+  var sort = qs.sort || { lastUpdated : -1 };
   if (qs.oldestCreated) {
     sort = {created:1};
     limit = 1;
@@ -314,8 +314,6 @@ User.prototype.search = function (query, ctx, options, cb) {
     if (!ctx.query.csv) {
       task.sort (sort);
     }
-
-    task.sort({ lastUpdated : -1});
 
     var promise = task.exec();
     if (qs.count) {
