@@ -1,0 +1,5 @@
+Yth. __name__
+
+Anda tidak menggunakan akun Anda (__primaryEmailAddress__) selama __inactiveMonths__ bulan.
+
+

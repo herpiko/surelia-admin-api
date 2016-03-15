@@ -5,8 +5,10 @@ var thunkified = helper.thunkified;
 var async = require ("async");
 var _ = require ("lodash");
 var boom = helper.error;
-var gearmanode = require('gearmanode');
-var extend = require('util')._extend;
+var gearmanode = require("gearmanode");
+var extend = require("util")._extend;
+var csv = require("to-csv");
+var moment = require("moment");
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
@@ -99,7 +101,7 @@ User.prototype.search = function (query, ctx, options, cb) {
   // skip, limit, sort
   var skip = qs.skip || 0;
   var limit = qs.limit || LIMIT;
-  var sort = qs.sort || { _id : -1 };
+  var sort = qs.sort || { lastUpdated : -1 };
   if (qs.oldestCreated) {
     sort = {created:1};
     limit = 1;
@@ -221,8 +223,32 @@ User.prototype.search = function (query, ctx, options, cb) {
     query["state"] = UserStates.types.INACTIVE
   }
   
+  if (qs.client) {
+    query["accessLog.lastClientType"] = qs.client;
+  }
+  
   if (qs.in && qs.in.roles) {
-    query['roles'] = { '$in' : [qs.in.roles] }
+    query["roles"] = { "$in" : [qs.in.roles] }
+  }
+
+  if (qs.inactiveInMonths) {
+    if (parseInt(qs.inactiveInMonths) === 3) {
+      query["accessLog.lastActivity"] = {};
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths) + 3, "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
+      query["accessLog.lastActivity"]["$gt"] = startDate;
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    } else if (parseInt(qs.inactiveInMonths) === 6) {
+      query["accessLog.lastActivity"] = {};
+      var startDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths) + 6, "months").toString());
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
+      query["accessLog.lastActivity"]["$gt"] = startDate;
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    } else if (parseInt(qs.inactiveInMonths) === 12) {
+      query["accessLog.lastActivity"] = {};
+      var endDate = new Date(moment().subtract(parseInt(qs.inactiveInMonths), "months").toString());
+      query["accessLog.lastActivity"]["$lt"] = endDate;
+    }
   }
 
   co(function*() {
@@ -237,7 +263,6 @@ User.prototype.search = function (query, ctx, options, cb) {
           count : 0,
           data : []
         }
-
         cb (null, obj);
        }
     }
@@ -248,7 +273,8 @@ User.prototype.search = function (query, ctx, options, cb) {
         query["group"] = group;
       }
     }
-    var task = Model.User.find(query, omit);
+    console.log(query);
+    var task = Model.User.find(query, omit).lean();
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
     task.populate({
@@ -281,9 +307,13 @@ User.prototype.search = function (query, ctx, options, cb) {
 
     task.skip (skip);
     task.limit (limit);
-    task.sort (sort);
 
-    task.sort({ lastUpdated : -1});
+    // sort() couldn't be executed if the result is too large
+    // Since csv option will fetch all documents in user collection,
+    // ignore sort()
+    if (!ctx.query.csv) {
+      task.sort (sort);
+    }
 
     var promise = task.exec();
     if (qs.count) {
@@ -305,7 +335,96 @@ User.prototype.search = function (query, ctx, options, cb) {
             model: "User"
           });
         }
-  
+        // If csv query in URL exists, export the data to CSV
+        if (ctx.query && ctx.query.csv === "true") {
+          var getMaps = function(callback) {
+            return Model.User.find({}, {username:1}).lean().exec(function(err, users){
+              // User map
+              var userMap = {};
+              for (var i in users) {
+                userMap[users[i]._id] = users[i].username;
+              }
+              if (err) return callback (err);
+              return DomainModel.Domain.find({}, {name:1}).lean().exec(function(err, domains){
+                if (err) return callback (err);
+                // Domain map
+                var domainMap = {};
+                for (var i in domains) {
+                  domainMap[domains[i]._id] = domains[i].name;
+                }
+                return callback(null, {
+                  userMap : userMap,
+                  domainMap : domainMap
+                })
+              });
+            });
+          }
+          return getMaps(function(err, maps){
+            if (err) return cb(err);
+            for (var i in retrieved) {
+              // Instead of Object ID, assign the true value from maps.
+              retrieved[i].creator = maps.userMap[retrieved[i].creator];
+              retrieved[i].domain = maps.domainMap[retrieved[i].domain];
+
+              // The user object has three levels. The iteration bellow
+              // moves the key and values to the top level, convert it to flat object. 
+              // So it will be easier for CSV lib to convert the object to CSV string.
+              // All the Object ID (_id) should be ignored because :
+              //  1. The Object ID itself is an object, could not be parsed by CSV lib
+              //  2. The key value that related to the Object ID is already here.
+              var nestedFields = ["profile", "group", "mailboxServer"];
+              for (var k in nestedFields) {
+                var field = nestedFields[k]; 
+                if (retrieved[i][field]) {
+                  var keys = Object.keys(retrieved[i][field]);
+                  for (var j in keys) {
+                    if (retrieved[i][field][keys[j]] && 
+                    typeof retrieved[i][field][keys[j]] === "object" && 
+                    // Ignore Object ID
+                    keys[j] != "_id") {
+                      var keys2 = Object.keys(retrieved[i][field][keys[j]]);
+                      for (var l in keys2) {
+                        if (retrieved[i][field][keys[j]][keys2[l]] && 
+                        typeof retrieved[i][field][keys[j]][keys2[l]] === "object" && 
+                        // Ignore Object ID
+                        keys2[l] != "_id") {
+                          if (retrieved[i][field][keys[j]][keys2[l]]) {
+                            var keys3 = Object.keys(retrieved[i][field][keys[j]][keys2[l]]);
+                            for (var m in keys3) {
+                              // Ignore Object ID
+                              if (keys3[m] != "_id") {
+                                // Moves to top level
+                                retrieved[i][keys[j] + "." + keys2[l] + "." + keys3[m]] = retrieved[i][field][keys[j]][keys2[l]][keys3[m]];
+                              }
+                            }
+                          }
+                        } else {
+                          // Ignore Object ID
+                          if (keys2[l] != "_id") {
+                            // Moves to top level
+                            retrieved[i][keys[j] + "." + keys2[l]] = retrieved[i][field][keys[j]][keys2[l]];
+                          }
+                        }
+                      }
+                    } else {
+                      // Ignore Object ID
+                      if (keys[j] != "_id") {
+                        // Moves to top level
+                        retrieved[i][keys[j]] = retrieved[i][field][keys[j]];
+                      }
+                    }
+                  }
+                  // Delete the nested key-value
+                  delete(retrieved[i][field]);
+                }
+              }
+            }
+            // Convert to CSV string
+            // The result should be a valid CSV
+            var result = csv(retrieved);
+            return cb(null, result);
+          })
+        }
         Model.User.count(query, function(err, total){
           if (err) return cb (err);
           var obj = {
@@ -443,7 +562,7 @@ User.prototype.create = function (ctx, options, cb) {
         var client = gearmanode.client({servers: self.options.gearmand});
         var job = client.submitJob("createUser", "");
         job.on("complete", function() {
-          console.log('RESULT: ' + job.response);
+          console.log("RESULT: " + job.response);
           cb(null, JSON.parse(job.response));
           client.close();
         });
@@ -488,7 +607,6 @@ User.prototype.update = function (ctx, options, cb) {
       // boom
     }
     var save = function(err, result) {
-    console.log(JSON.stringify(body));
       if (err) {
         return cb(err);
       }
@@ -511,7 +629,6 @@ User.prototype.update = function (ctx, options, cb) {
           QueueModel.findOne({
             "args.data.alias" : args.data.alias
           }, function(err, entry) {
-            console.log(JSON.stringify(entry));
             if (entry) {
               entry.doneDate = new Date();
               entry.state = "finished";
@@ -535,7 +652,7 @@ User.prototype.update = function (ctx, options, cb) {
           var client = gearmanode.client({servers: self.options.gearmand});
           var job = client.submitJob("updateAlias", buf);
           job.on("complete", function() {
-            console.log('RESULT: ' + job.response);
+            console.log("RESULT: " + job.response);
             closeTransaction(args,function() {
               cb(null, JSON.parse(job.response)); 
             });
@@ -544,14 +661,14 @@ User.prototype.update = function (ctx, options, cb) {
         }
         
         if (body.alias) {
-          Model.User.update({_id:data._id}, { $set: {'alias' : body.alias}}, function(){
+          Model.User.update({_id:data._id}, { $set: {"alias" : body.alias}}, function(){
             DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
               newJob(body.source,data.username+"@"+result.name);
               return cb (null, object);
             });
           });
         } else if (data.alias && !body.alias) {
-          Model.User.update({_id:data._id}, { $unset: {'alias' : data.alias}}, function(){
+          Model.User.update({_id:data._id}, { $unset: {"alias" : data.alias}}, function(){
             newJob(data.alias,false);
             return cb (null, object);
           });
@@ -720,7 +837,7 @@ User.prototype.suggest = function(ctx, options, cb) {
   var name = options.body.name;
   var domain = ctx.params.domain;
   var trim = function(name) {
-    var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:'"\|<>/\?,'`\.]/g, "");
+    var name = name.replace(/[_\-\+!\[\]{}=@#$%\^&\*\(\);:""\|<>/\?,"`\.]/g, "");
     name = name.trim();
     name = name.replace(/ +/g, ".");
     name = name.toLowerCase();
