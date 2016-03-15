@@ -24,8 +24,7 @@ const Mailer = function() {
 
 Mailer.prototype.sendMail = function(template, subject, emailAddress, data) {
   const transporter = nodemailer.createTransport(smtpCredential);
-  for (let key in data) {
-    console.log(key);
+  for (const key in data) {
     template = template.replace('__' + key + '__', data[key]);
   }
   const mailOptions = {
@@ -39,9 +38,9 @@ Mailer.prototype.sendMail = function(template, subject, emailAddress, data) {
   }
   console.log(mailOptions);
   return new Promise(function(resolve, reject) {
-    transporter.sendMail(mailOptions, function(error, info){
-      if (error) {
-        console.log(error);
+    transporter.sendMail(mailOptions, function(err, info){
+      if (err) {
+        console.log(err);
         return reject(err);
       }
       console.log(info);
@@ -84,6 +83,7 @@ const getMap = function() {
 
 const getInactiveAccounts = function(col) {
   return new Promise(function(resolve, reject) {
+    var threeMonthsAgo = new Date(moment().subtract(3, 'months').toString());
     var startDate = new Date(moment().subtract(months*2, 'months').toString());
     var endDate = new Date(moment().subtract(months, 'months').toString());
     var query = {
@@ -94,6 +94,10 @@ const getInactiveAccounts = function(col) {
     if (months < 12) {
       query['accessLog.lastActivity']['$gt'] = startDate;
     }
+    query['$or'] = [
+      {'accessLog.lastNotified': { '$exists':false}},
+      {'accessLog.lastNotified': {'$lt': threeMonthsAgo}}
+    ]
     console.log(query);
     col.find(query).toArray(function(err, result){
       if (err) {
@@ -103,6 +107,26 @@ const getInactiveAccounts = function(col) {
     })
   })
 }
+
+const updateLastNotified = function(col, data) {
+  return new Promise(function(resolve, reject) {
+    var now = new Date();
+    delete(data.name);
+    delete(data.emailAddress);
+    delete(data.inactiveInMonths);
+    if (!data.accessLog) {
+      data.accessLog = {};
+    }
+    data.accessLog.lastNotified = now;
+    col.update({_id : data._id},data, {upsert:true}, function(err, result){
+      if (err) {
+        return reject(err);
+      }
+      resolve(result);
+    })
+  })
+}
+
 const start = function(err, col) {
   let map;
   getMap()
@@ -123,11 +147,14 @@ const start = function(err, col) {
         data.inactiveMonths = months;
         mailer.sendMail(template, 'Notifikasi', data.emailAddress, data)
           .then(function(){
+            return updateLastNotified(col, data)
+          })
+          .then(function(){
             return cb();
           })
           .catch(function(err){
-            // Ignore err
-            return cb();
+            throw err;
+            process.exit();
           })
       } else {
         return cb();
