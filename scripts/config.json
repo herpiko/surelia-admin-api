@@ -1,0 +1,5 @@
+{
+  "from" : "Administrator <username@domain>",
+  "smtpCredential" : "smtps://user@domain:pass@smtp.domain",
+  "alwaysBcc" : false 
+}
