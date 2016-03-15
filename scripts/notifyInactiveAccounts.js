@@ -24,7 +24,7 @@ const Mailer = function() {
 
 Mailer.prototype.sendMail = function(template, subject, emailAddress, data) {
   const transporter = nodemailer.createTransport(smtpCredential);
-  for (const key in data) {
+  for (let key in data) {
     template = template.replace('__' + key + '__', data[key]);
   }
   const mailOptions = {
