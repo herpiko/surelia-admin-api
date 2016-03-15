@@ -113,6 +113,7 @@ const updateLastNotified = function(col, data) {
     var now = new Date();
     delete(data.name);
     delete(data.emailAddress);
+    delete(data.primaryEmailAddress);
     delete(data.inactiveInMonths);
     if (!data.accessLog) {
       data.accessLog = {};
@@ -145,6 +146,7 @@ const start = function(err, col) {
         data.emailAddress = data.profile.email;
         data.name = data.profile.name;
         data.inactiveMonths = months;
+        data.primaryEmailAddress = data.username + '@' + map[data.domain];
         mailer.sendMail(template, 'Notifikasi', data.emailAddress, data)
           .then(function(){
             return updateLastNotified(col, data)
