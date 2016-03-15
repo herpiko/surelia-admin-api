@@ -12,6 +12,7 @@ var moment = require("moment");
 
 var Province = require ("../../resources/misc/schemas/province");
 var KabKota = require ("../../resources/misc/schemas/kabkota");
+var AdminActivities = require ("../../resources/misc/schemas/adminActivities");
 
 var ResourceUser = require ("../../resources/user");
 var Model = ResourceUser.schemas;
@@ -567,8 +568,17 @@ User.prototype.create = function (ctx, options, cb) {
           client.close();
         });
 
-
-        return cb (null, object);
+        AdminActivities.create({
+          timestamp : new Date(),
+          activity : 'createUser',
+          data : data
+        }, function(err, result){
+          if (err) {
+            console.log(err);
+            return cb(boom.badRequest (err.message));
+          }
+          return cb (null, object);
+        })
       });
     })();
   }
@@ -602,7 +612,7 @@ User.prototype.update = function (ctx, options, cb) {
     if (err) {
       return cb (err);
     }
-
+    var userState = data.state
     if (!data) {
       // boom
     }
@@ -611,7 +621,6 @@ User.prototype.update = function (ctx, options, cb) {
         return cb(err);
       }
       data.save(function (err, user){
-        
         if (err) {
           console.log(err);
           return cb(boom.badRequest (err.message));
@@ -660,22 +669,46 @@ User.prototype.update = function (ctx, options, cb) {
           });
         }
         
-        if (body.alias) {
-          Model.User.update({_id:data._id}, { $set: {"alias" : body.alias}}, function(){
-            DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
-              newJob(body.source,data.username+"@"+result.name);
+        var reply = function() {
+          if (body.alias) {
+            Model.User.update({_id:data._id}, { $set: {"alias" : body.alias}}, function(){
+              DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
+                newJob(body.source,data.username+"@"+result.name);
+                return cb (null, object);
+              });
+            });
+          } else if (data.alias && !body.alias) {
+            Model.User.update({_id:data._id}, { $unset: {"alias" : data.alias}}, function(){
+              newJob(data.alias,false);
               return cb (null, object);
             });
-          });
-        } else if (data.alias && !body.alias) {
-          Model.User.update({_id:data._id}, { $unset: {"alias" : data.alias}}, function(){
-            newJob(data.alias,false);
+          } else {
             return cb (null, object);
-          });
-        } else {
-          return cb (null, object);
+          }
         }
-  
+        
+        if (userState != data.state) {
+          var activity;
+          if (data.state === 'active') {
+            activity = 'activateUser';
+          }
+          if (data.state === 'inactive') {
+            activity = 'deactivateUser';
+          }
+          AdminActivities.create({
+            timestamp : new Date(),
+            activity : activity,
+            data : data
+          }, function(err, result){
+            if (err) {
+              console.log(err);
+              return cb(boom.badRequest (err.message));
+            }
+            return reply();
+          })
+        } else {
+          reply();
+        }
       });
     }
 
@@ -738,22 +771,40 @@ User.prototype.activate = function (ctx, options, cb) {
 
 User.prototype.remove = function (ctx, options, cb){
   if (ctx.params.id) {
-    Model.User.remove({_id : ctx.params.id}, function(err){
+    Model.User.findOne({_id : ctx.params.id}, function(err, data){
       if (err) return cb (err);
-      cb (null, {object : "user", _id : ctx.params._id})
-    });
-  }
-  else {
-
-    if (Array.isArray(ctx.query.ids)) {
-      Model.User.remove({ _id: { $in : ctx.query.ids} }, function(err){
+      Model.User.remove({_id : ctx.params.id}, function(err){
         if (err) return cb (err);
-        cb (null, {object : "user", data : ctx.query.ids})
+        reply(null, {object : "user", _id : ctx.params._id}, data);
+      })
+    });
+  } else {
+    if (Array.isArray(ctx.query.ids)) {
+      Model.User.find({_id : { $in : ctx.query.ids}}, function(err, data){
+        if (err) return cb (err);
+        Model.User.remove({ _id: { $in : ctx.query.ids} }, function(err){
+          if (err) return cb (err);
+          reply(null, {object : "user", data : ctx.query.ids}, data)
+        })
       });
 
     } else {
       return cb (boom.badRequest("invalid arguments"));
     }
+  }
+  var reply = function(err, obj, data) {
+    // This err is always null
+    AdminActivities.create({
+      timestamp : new Date(),
+      activity : 'removeUser',
+      data : data
+    }, function(err, result){
+      if (err) {
+        console.log(err);
+        return cb(boom.badRequest (err.message));
+      }
+      cb(err, obj);
+    })
   }
 }
 
