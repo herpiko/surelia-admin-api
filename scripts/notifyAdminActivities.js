@@ -95,7 +95,7 @@ const start = function(err, col) {
     }
 
     // Build html table
-    let table = '<table border=\'0\'><thead><tr><td>Local Domain</td>By<td></td><td>Activity</td><td>Email Account</td><td>Name</td></tr></thead></tbody>';
+    let table = '';
     for (let i in result) {
       table += '<tr>';
       table += '<td>' + result[i].localDomain + '</td>';
@@ -105,7 +105,6 @@ const start = function(err, col) {
       table += '<td>' + result[i].data.profile.name + '</td>';
       table += '</tr>';
     }
-    table +='</tbody></table>'
     console.log(table);
     let data = {
       table : table,

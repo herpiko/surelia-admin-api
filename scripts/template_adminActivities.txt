@@ -1,3 +1,16 @@
 <p>
-__table__
+  <table border="0">
+    <thead>
+      <tr>
+        <td>Local Domain</td>
+        <td>By</td>
+        <td>Activity</td>
+        <td>Email Account</td>
+        <td>Name</td>
+      </tr>
+    </thead>
+    <tbody>
+      __table__
+    </tbody>
+  </table>
 </p>
