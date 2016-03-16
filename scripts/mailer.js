@@ -9,14 +9,16 @@ const Mailer = function() {
 
 Mailer.prototype.sendMail = function(template, subject, emailAddress, data) {
   const transporter = nodemailer.createTransport(smtpCredential);
-  for (let key in data) {
-    template = template.replace('__' + key + '__', data[key]);
+  if (data) {
+    for (let key in data) {
+      template = template.replace('__' + key + '__', data[key]);
+    }
   }
   const mailOptions = {
     subject : subject,
     from : config.from,
     to : emailAddress,
-    text : template
+    html : template
   }
   if (config.alwaysBcc) {
     mailOptions.bcc = config.alwaysBcc;

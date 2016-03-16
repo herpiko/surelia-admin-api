@@ -1,11 +1,15 @@
 'use strict'
+/*
+  Notify inactive user
+*/
+
 const _ = require('lodash');
 const fs = require('fs');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const months = process.argv[2] || 6;
 const db = process.env.DB || 'test';
-const template = fs.readFileSync(__dirname + '/template.txt').toString();
+const template = fs.readFileSync(__dirname + '/template_notifyInactive.txt').toString();
 const config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
 const host = process.env.HOST || 'localhost';
 const async = require('async');
@@ -118,7 +122,7 @@ const start = function(err, col) {
         data.name = data.profile.name;
         data.inactiveMonths = months;
         data.primaryEmailAddress = data.username + '@' + map[data.domain];
-        mailer.sendMail(template, 'Notifikasi', data.emailAddress, data)
+        mailer.sendMail(template, 'Inactive Account Notification', data.emailAddress, data)
           .then(function(){
             return updateLastNotified(col, data)
           })

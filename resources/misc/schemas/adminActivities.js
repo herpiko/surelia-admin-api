@@ -18,7 +18,7 @@ var Schema = mongoose.Schema;
  * The main user schema
  */
 var AdminActivitySchema = new Schema({
-  timestamp : { type : String, lowercase: true, trim: true, required: true},
+  timestamp : { type : Date},
   activity: { type : String}, 
   data : { type : Object },
 });
