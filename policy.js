@@ -73,6 +73,7 @@ var policy = {
   api: {
     filter: fort,
     bypass: false,
+    apiBypass : ["/domains/logo/"],
     levels: {
     },
     defaults: {
