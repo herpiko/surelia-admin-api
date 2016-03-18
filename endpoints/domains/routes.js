@@ -11,9 +11,11 @@ function Routes (name, mid, handle) {
   router.GET ("/domains", handle.find);
   router.GET ("/domains/active", handle.findActive);
   router.GET ("/domains/inactive", handle.findInactive);
+  router.GET ("/domains/logo/:filename", handle.getLogo);
   router.GET ("/domains/:id", handle.findOne);
   router.POST ("/domains", handle.create);
 
+  router.POST ("/domains/logo", handle.uploadLogo);
   router.POST ("/domains/:id", handle.update);
   router.PUT ("/domains/:id", handle.update);
   router.DEL ("/domains/:id", handle.remove);

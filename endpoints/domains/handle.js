@@ -49,3 +49,11 @@ Domain.prototype.deactivate = function * (){
     yield handle.get (this, "deactivate", {});
 }
 
+Domain.prototype.uploadLogo = function * (){
+    yield handle.uploadFile (this, "uploadLogo", {});
+}
+
+Domain.prototype.getLogo = function * (){
+    yield handle.downloadFile (this, "getLogo", {});
+}
+

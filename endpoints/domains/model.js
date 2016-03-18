@@ -385,6 +385,14 @@ Domain.prototype.deactivate = function (ctx, options, cb){
   this.setState(DomainStates.types.INACTIVE, ctx, options, cb);
 }
 
+Domain.prototype.uploadLogo = function (ctx, gfs, meta, cb){
+  cb(null, meta);
+}
+
+Domain.prototype.getLogo = function (ctx, options, cb){
+  cb();
+}
+
 module.exports = function(options) {
   return thunkified (Domain(options));
 }
