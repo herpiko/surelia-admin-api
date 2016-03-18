@@ -569,20 +569,23 @@ User.prototype.create = function (ctx, options, cb) {
         var client = gearmanode.client({servers: self.options.gearmand});
         var job = client.submitJob("createUser", "");
         job.on("complete", function() {
-          // The new user has been created, send welcome message
-          DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
-            const mailer = new Mailer();
-            data.primaryEmailAddress = data.username+"@"+result.name;
-            data.name = data.profile.name;
-            mailer.sendMail(mailerTemplate, mailerConfig.subjects.welcomeMessage, data.primaryEmailAddress, data)
-          });
           console.log("RESULT: " + job.response);
           cb(null, JSON.parse(job.response));
           client.close();
         });
+
+        // The new user has been created, send welcome message
+        DomainModel.Domain.findOne({_id:data.domain}, function(err, result) {
+          const mailer = new Mailer();
+          data.primaryEmailAddress = data.username+"@"+result.name;
+          data.name = data.profile.name;
+          mailer.sendMail(mailerTemplate, mailerConfig.subjects.welcomeMessage, data.primaryEmailAddress, data)
+        });
+
         if (ctx.session.user.domain.name === policy.mainDomain) {
           return cb(err, object);
         }
+
         AdminActivities.create({
           timestamp : new Date(),
           localDomain : ctx.session.user.domain.name,
