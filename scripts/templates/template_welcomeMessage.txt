@@ -2,5 +2,5 @@
 Yth. __name__
 </p>
 <p>
-Selamat datang. Akun anda __primaryEmailAddress__.
+Selamat datang. Akun anda __primaryEmailAddress__ telah aktif.
 </p>
