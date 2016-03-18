@@ -1,26 +1,52 @@
 'use strict'
-/*
-  Notify inactive user
-*/
-
 const _ = require('lodash');
 const fs = require('fs');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 const months = process.argv[2] || 6;
 const db = process.env.DB || 'test';
-const template = fs.readFileSync(__dirname + '/templates/template_notifyInactive.txt').toString();
+const template = fs.readFileSync(__dirname + '/template.txt').toString();
 const config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
+const smtpCredential = config.smtpCredential;
 const host = process.env.HOST || 'localhost';
 const async = require('async');
-const Mailer = require(__dirname + '/mailer');
-
 let opts = {};
 if (process.env.USER) {
   opts.user = process.env.USER;
 }
 if (process.env.PASS) {
   opts.pass = process.env.PASS;
+}
+
+const Mailer = function() {
+}
+
+Mailer.prototype.sendMail = function(template, subject, emailAddress, data) {
+  const transporter = nodemailer.createTransport(smtpCredential);
+  for (let key in data) {
+    template = template.replace('__' + key + '__', data[key]);
+  }
+  const mailOptions = {
+    subject : subject,
+    from : config.from,
+    to : emailAddress,
+    text : template
+  }
+  if (config.alwaysBcc) {
+    mailOptions.bcc = config.alwaysBcc;
+  }
+  console.log(mailOptions);
+  return new Promise(function(resolve, reject) {
+    transporter.sendMail(mailOptions, function(err, info){
+      if (err) {
+        console.log(err);
+        return reject(err);
+      }
+      console.log(info);
+      resolve(info);
+    })
+  })
 }
 
 if (mongoose.connection.readyState === 0) {
@@ -121,7 +147,7 @@ const start = function(err, col) {
         data.name = data.profile.name;
         data.inactiveMonths = months;
         data.primaryEmailAddress = data.username + '@' + map[data.domain];
-        mailer.sendMail(template, 'Inactive Account Notification', data.emailAddress, data)
+        mailer.sendMail(template, 'Notifikasi', data.emailAddress, data)
           .then(function(){
             return updateLastNotified(col, data)
           })

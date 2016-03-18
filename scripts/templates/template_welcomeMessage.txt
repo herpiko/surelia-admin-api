@@ -1,6 +1,0 @@
-<p>
-Yth. __name__
-</p>
-<p>
-Selamat datang. Akun anda __primaryEmailAddress__.
-</p>

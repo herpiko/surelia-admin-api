@@ -1,10 +1,5 @@
 {
   "from" : "Administrator <username@domain>",
-  "smtpCredential" : "smtps://user@domain:pass@smtp.domain",
-  "alwaysBcc" : false,
-  "adminEmails" : ["user@domain"],
-
-  "subjects" : {
-   "welcomeMessage" : "Welcome Message"
-  } 
-} 
+  "smtpCredential" : "smtps://surelia.web.client@gmail.com:katasandisurelia@smtp.gmail.com",
+  "alwaysBcc" : false 
+}
