@@ -1,6 +1,9 @@
 var compose = require("koa-compose");
 var kasta = require("kasta");
 
+// Other than this will be labeled as local domain
+var mainDomain = 'domain.com';
+
 // configurable list of avalilable roles and access levels
 var config = {
 
@@ -79,9 +82,12 @@ var policy = {
       level: acl.accessLevels.user
     }
   },
+  
+  // Main domain
+  mainDomain: mainDomain,
 
   // APP related policies
-  app: {}
+  app: {},
 };
 
 module.exports = policy;
