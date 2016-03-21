@@ -377,6 +377,28 @@ Domain.prototype.remove = function (ctx, options, cb){
 
 }
 
+Domain.prototype.statIncomingCounter = function(ctx, options, cb) {
+  var self = this;
+  var client = gearmanode.client({servers: self.options.gearmand});
+  var job = client.submitJob("statIncomingCounter", "");
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, job.response);
+    client.close();
+  });
+}
+
+Domain.prototype.statOutgoingCounter = function(ctx, options, cb) {
+  var self = this;
+  var client = gearmanode.client({servers: self.options.gearmand});
+  var job = client.submitJob("statOutgoingCounter", "");
+  job.on("complete", function() {
+    console.log('RESULT: ' + job.response);
+    cb(null, job.response);
+    client.close();
+  });
+}
+
 Domain.prototype.activate = function (ctx, options, cb){
   this.setState(DomainStates.types.ACTIVE, ctx, options, cb);
 }
