@@ -1,6 +1,6 @@
 // Dependencies
 var mongoose = require ("mongoose");
-var bcrypt = require ("nan-bcrypt"); // todo: change to native bcrypt, or require ("bcrypt-nodejs") if it has problem
+var bcrypt = require ("bcrypt"); // todo: change to native bcrypt, or require ("bcrypt-nodejs") if it has problem
 var serializer = require ("serializer");
 var uuid = require("uuid");
 
@@ -21,7 +21,7 @@ function auth (schema, options) {
       type: String,
       lowercase: true,
       required: true,
-      index: { unique: true } 
+      index: { unique: true }
     }
   }
 
@@ -45,7 +45,7 @@ function auth (schema, options) {
     return this;
   });
 
-  // Authenticate with the configured login path and password on 
+  // Authenticate with the configured login path and password on
   // the model layer, passing the authenticated instance into the callback
   schema.static("authenticate", function (username, domain, password, next) {
 
@@ -87,7 +87,7 @@ function auth (schema, options) {
       if (err) return next(err);
       if (!model) return next("model does not exist");
 
-      model.secret = null; 
+      model.secret = null;
       model.state = "active";
 
       model.save (function (err, activated){
@@ -123,7 +123,7 @@ function auth (schema, options) {
         }
         return next(err);
       }
-      
+
       model.secret = serializer.stringify({ _id : model._id }, options.keys[0], options.keys[1]);
       model.state = model.state || "pending";
 
@@ -132,19 +132,19 @@ function auth (schema, options) {
       }
 
       model.save(function(err, saved){
-        
+
         if (err) {
           return next (err);
         }
 
-        return next(null, model);  
+        return next(null, model);
       });
     })
     return this;
   })
 
   // Create a virtual path for the password path, storing a temporary
-  // unencrypted password that will not be persisted, and returning the 
+  // unencrypted password that will not be persisted, and returning the
   // encrypted hash upon request
   schema
     .virtual("password")
