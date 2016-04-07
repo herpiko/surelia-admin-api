@@ -33,7 +33,7 @@ function Domain (options) {
 Domain.prototype.find = function(ctx, options, cb) {
   var session = ctx.session;
   var query = {};
-  if (session && 
+  if (session &&
       session.user &&
       session.user.group) {
         // Local admin
@@ -223,7 +223,7 @@ Domain.prototype.create = function (ctx, options, cb) {
        args: body,
        state: QueueStates.types.NEW,
        createdDate: new Date
-     }, next); 
+     }, next);
   }
 
   var register = function(err, result) {
@@ -291,7 +291,7 @@ Domain.prototype.update = function (ctx, options, cb) {
 
     for (var k in body) {
       if (body[k]) {
-        data[k] = body[k];  
+        data[k] = body[k];
       }
     }
 
@@ -336,7 +336,7 @@ Domain.prototype.setState = function (state, ctx, options, cb){
     if (err) return cb (err);
     if (data && data.length > 0) {
       task.update(query,
-      { 
+      {
         $set: {
           state : state
         }
@@ -390,7 +390,13 @@ Domain.prototype.uploadLogo = function (ctx, gfs, meta, cb){
 }
 
 Domain.prototype.getLogo = function (ctx, options, cb){
-  cb();
+  ctx.gfs.files.find({filename: ctx.params.filename}).sort({uploadDate: -1}).toArray((err, files)=> {
+    options = options || {};
+    if (files[0]) {
+      options._id = files[0]._id;
+    }
+    cb(err, options);
+  });
 }
 
 module.exports = function(options) {
