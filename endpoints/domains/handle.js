@@ -49,6 +49,14 @@ Domain.prototype.deactivate = function * (){
     yield handle.get (this, "deactivate", {});
 }
 
+Domain.prototype.statIncomingCounter = function * (){
+    yield handle.get (this, "statIncomingCounter", {});
+}
+
+Domain.prototype.statOutgoingCounter = function * (){
+    yield handle.get (this, "statOutgoingCounter", {});
+}
+
 Domain.prototype.uploadLogo = function * (){
     yield handle.uploadFile (this, "uploadLogo", {});
 }

@@ -9,6 +9,8 @@ function Routes (name, mid, handle) {
 
   // domains
   router.GET ("/domains", handle.find);
+  router.GET ("/domains/stat-incoming-counter", handle.statIncomingCounter);
+  router.GET ("/domains/stat-outgoing-counter", handle.statOutgoingCounter);
   router.GET ("/domains/active", handle.findActive);
   router.GET ("/domains/inactive", handle.findInactive);
   router.GET ("/domains/logo/:filename", handle.getLogo);
