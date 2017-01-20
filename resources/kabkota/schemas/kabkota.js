@@ -41,6 +41,7 @@ try {
  */
 var KabkotaSchema = new Schema({
   name: { type : String },
+  province: { type : mongoose.Schema.Types.Mixed },
 });
 
 KabkotaSchema.index({slug: 1}, {unique: true});

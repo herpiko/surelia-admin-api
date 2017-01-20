@@ -9,6 +9,9 @@ var boom = helper.error;
 var ResourceProvince = require ("../../resources/province");
 var Model = ResourceProvince.schemas;
 
+var ResourceUser = require ("../../resources/user");
+var UserModel = ResourceUser.schemas;
+
 var policy = require("../../policy");
 var ProvinceEnums = ResourceProvince.enums(policy);
 var ProvinceStates = ProvinceEnums.States;
@@ -173,7 +176,6 @@ Province.prototype.compose = function (ctx, options, cb) {
       }
     });
   } else {
-    data.slug = data.title.trim().replace(/\s+/g, "-").toLowerCase();
     Model.Province.create(data, function(err, data) {
       if (err) return cb(err);
       if (!data) {
@@ -198,10 +200,17 @@ Province.prototype.remove = function (ctx, options, cb) {
 
   var id = ctx.params.id || data.id;
 
-  Model.Province.remove({_id : ctx.params.id}, function(err){
-    if (err) return cb (err);
-    cb (null, {object : "province", _id : id})
-  });
+  UserModel.User.count({"profile.organizationInfo.province" : id}, function(err, result) {
+    if (err) return cb(err);
+    if (result > 0) {
+      return cb((new Error('This province still being used by other user(s)')).message);
+    }
+    Model.Province.remove({_id : ctx.params.id}, function(err){
+      if (err) return cb (err);
+      cb (null, {object : "province", _id : id})
+    });
+  })
+
 }
 
 module.exports = function(options) {

@@ -9,6 +9,9 @@ var boom = helper.error;
 var ResourceKabkota = require ("../../resources/kabkota");
 var Model = ResourceKabkota.schemas;
 
+var ResourceUser = require ("../../resources/user");
+var UserModel = ResourceUser.schemas;
+
 var policy = require("../../policy");
 var KabkotaEnums = ResourceKabkota.enums(policy);
 var KabkotaStates = KabkotaEnums.States;
@@ -108,6 +111,10 @@ Kabkota.prototype.search = function (query, ctx, options, cb) {
   if (options.and) {
     query = { $and : [ query, options.and ]};
   }
+  
+  if (qs.province) {
+    query['province'] = ObjectId(qs.province.toString());
+  }
 
   co(function*() {
     var task = Model.Kabkota.find(query, omit);
@@ -161,19 +168,34 @@ Kabkota.prototype.compose = function (ctx, options, cb) {
     Model.Kabkota.findOne({_id: id}, function(err, onDisk) {
       if (err) return cb(err);
       if (onDisk) {
-        var onDisk = _.merge(onDisk, data);
-        onDisk.save(function(err, data) {
-          if (err) return cb(err);
-          data = data.toJSON();
-          data = _.omit(data, ["log", "__v"]);
-          cb(err, data);
-        });
+        if (onDisk.province != data.province) {
+          var onDisk = _.merge(onDisk, data);
+          UserModel.User.count({"profile.organizationInfo.kabKota" : onDisk._id}, function(err, result) {
+            if (err) return cb(err);
+            if (result > 0) {
+              return cb((new Error('This kabupaten / city still being used by other user(s)')).message);
+            }
+            onDisk.save(function(err, data) {
+              if (err) return cb(err);
+              data = data.toJSON();
+              data = _.omit(data, ["log", "__v"]);
+              cb(err, data);
+            });
+          })
+        } else {
+          var onDisk = _.merge(onDisk, data);
+          onDisk.save(function(err, data) {
+            if (err) return cb(err);
+            data = data.toJSON();
+            data = _.omit(data, ["log", "__v"]);
+            cb(err, data);
+          });
+        }
       } else {
         return cb(boom.notfound("Kabkota not found"));
       }
     });
   } else {
-    data.slug = data.title.trim().replace(/\s+/g, "-").toLowerCase();
     Model.Kabkota.create(data, function(err, data) {
       if (err) return cb(err);
       if (!data) {
@@ -198,9 +220,15 @@ Kabkota.prototype.remove = function (ctx, options, cb) {
 
   var id = ctx.params.id || data.id;
 
-  Model.Kabkota.remove({_id : ctx.params.id}, function(err){
-    if (err) return cb (err);
-    cb (null, {object : "kabkota", _id : id})
+  UserModel.User.count({"profile.organizationInfo.kabKota" : id}, function(err, result) {
+    if (err) return cb(err);
+    if (result > 0) {
+      return cb((new Error('This kabupaten / city still being used by other user(s)')).message);
+    }
+    Model.Kabkota.remove({_id : ctx.params.id}, function(err){
+      if (err) return cb (err);
+      cb (null, {object : "kabkota", _id : id})
+    });
   });
 }
 
