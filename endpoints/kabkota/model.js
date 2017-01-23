@@ -184,6 +184,7 @@ Kabkota.prototype.compose = function (ctx, options, cb) {
           })
         } else {
           var onDisk = _.merge(onDisk, data);
+          onDisk.province = ObjectId(onDisk.province);
           onDisk.save(function(err, data) {
             if (err) return cb(err);
             data = data.toJSON();
@@ -196,6 +197,7 @@ Kabkota.prototype.compose = function (ctx, options, cb) {
       }
     });
   } else {
+    data.province = ObjectId(data.province);
     Model.Kabkota.create(data, function(err, data) {
       if (err) return cb(err);
       if (!data) {
