@@ -105,9 +105,8 @@ Group.prototype.search = function (query, ctx, options, cb) {
       group != Model.Group.domainAdmin._id &&
       group != Model.Group.superAdmin._id
       ) {
-      query["_id"] = group;
+      query["$or"] =[ { "_id" : group }, { "creator" : session.user._id } ];
     }
-
     var task = Model.Group.find(query, omit);
     var paths = Model.Group.schema.paths;
     var keys = Object.keys(paths);
@@ -211,6 +210,7 @@ Group.prototype.create = function (ctx, options, cb) {
       console.log("localadmin");
     }
     body.createdDate = new Date;
+    body.domain = ObjectId(body.domain._id);;
     Model.Group.create (body, function (err, data){
       if (err) {
         if (err.code == 11000) {
@@ -222,6 +222,7 @@ Group.prototype.create = function (ctx, options, cb) {
 
       if (!data) {
         // boom
+        console.log('No data');
       }
 
       var object = {
