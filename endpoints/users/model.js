@@ -551,8 +551,10 @@ User.prototype.create = function (ctx, options, cb) {
       Model.User.register (body, function (err, data){
 
         if (err) {
-          console.log(err);
-          return cb (err);
+          if (err.message) {
+            return cb (err.message);
+          }
+          return cb(err);
         }
 
         if (!data) {
