@@ -280,7 +280,10 @@ User.prototype.search = function (query, ctx, options, cb) {
         query["group"] = group;
       }
     }
-    console.log(query);
+    
+    // Exclude deleted users
+    query['state'] = { '$ne' : 'deleted' };
+
     var task = Model.User.find(query, omit).lean();
     task.populate("mailboxServer", "_id name");
     task.populate("group", "_id name");
@@ -798,21 +801,25 @@ User.prototype.remove = function (ctx, options, cb){
   if (ctx.params.id) {
     Model.User.findOne({_id : ctx.params.id}, function(err, data){
       if (err) return cb (err);
-      Model.User.remove({_id : ctx.params.id}, function(err){
-        if (err) return cb (err);
+      data.state = 'deleted';
+      data.save(function(err) {
         reply(null, {object : "user", _id : ctx.params._id}, data);
       })
     });
   } else {
     if (Array.isArray(ctx.query.ids)) {
-      Model.User.find({_id : { $in : ctx.query.ids}}, function(err, data){
-        if (err) return cb (err);
-        Model.User.remove({ _id: { $in : ctx.query.ids} }, function(err){
+      async.eachSeries(ctx.query.ids, function(id, cb) {
+        Model.User.findOne({_id : id}, function(err, data){
           if (err) return cb (err);
-          reply(null, {object : "user", data : ctx.query.ids}, data)
-        })
+          data.state = 'deleted';
+          data.save(function(err) {
+            cb(err);
+          });
+        });
+      }, function(err) {
+        if (err) return cb (err);
+        reply(null, {object : "user", data : ctx.query.ids}, data)
       });
-
     } else {
       return cb (boom.badRequest("invalid arguments"));
     }
