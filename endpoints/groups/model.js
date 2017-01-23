@@ -210,7 +210,7 @@ Group.prototype.create = function (ctx, options, cb) {
       console.log("localadmin");
     }
     body.createdDate = new Date;
-    body.domain = ObjectId(body.domain._id);;
+    body.domain = ObjectId(body.domain._id);
     Model.Group.create (body, function (err, data){
       if (err) {
         if (err.code == 11000) {
