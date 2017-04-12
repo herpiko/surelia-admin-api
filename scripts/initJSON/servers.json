@@ -1,0 +1,10 @@
+{
+        "name" : "Mail",
+        "ip" : "10.31.2.76",
+        "description" : "Mailbox",
+        "createdDate" : "2017-04-01T00:00:00.904Z",
+        "_id" : { "$oid" : "100000000000000000000003" },
+        "type" : [
+                "mailbox"
+        ]
+}

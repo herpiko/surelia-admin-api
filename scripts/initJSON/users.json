@@ -1,0 +1,18 @@
+{
+    "_id" : { "$oid" : "100000000000000000000006" },
+    "domain" : { "$oid" : "100000000000000000000004" },
+    "group" : { "$oid" : "100000000000000000000001" },
+    "hash" : "$2a$10$MkwPfHFR3uh7KEECxQFYiOg1gGLA0oYiRP770aaQdmdf/Pkpxfypa",
+    "mailboxServer" : { "$oid" : "100000000000000000000003" },
+    "profile" : {
+        "organization" : "",
+        "username" : "admin",
+        "name" : "admin"
+    },
+    "quota" : 1000,
+    "roles" : [ 
+        "admin"
+    ],
+    "state" : "active",
+    "username" : "admin"
+}

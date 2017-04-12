@@ -1,0 +1,10 @@
+{
+  "from" : "Administrator <username@domain>",
+  "smtpCredential" : "smtps://user@domain:pass@smtp.domain",
+  "alwaysBcc" : false,
+  "adminEmails" : ["user@domain"],
+
+  "subjects" : {
+   "welcomeMessage" : "Welcome Message"
+  } 
+} 
