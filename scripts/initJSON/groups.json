@@ -1,10 +1,10 @@
 {
         "_id" : { "$oid" : "000000000000000000000000" },
         "name" : "Super Admin",
-        "description" : "Super Admin",
-}
+        "description" : "Super Admin"
+},
 {
         "_id" : { "$oid" : "000000000000000000000001" },
         "name" : "Domain Admin",
-        "description" : "Domain Admin",
+        "description" : "Domain Admin"
 }
